@@ -1,0 +1,184 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/Map.gd" id="1_map"]
+[ext_resource type="PackedScene" path="res://scenes/Player/Player.tscn" id="2_player"]
+
+[node name="Map" type="Node2D"]
+script = ExtResource("1_map")
+
+[node name="ArenaWalls" type="StaticBody2D" parent="."]
+collision_mask = 6
+
+[node name="ChestsContainer" type="Node2D" parent="."]
+
+[node name="EnemiesContainer" type="Node2D" parent="."]
+
+[node name="Player" parent="." instance=ExtResource("2_player")]
+
+[node name="BGMPlayer" type="AudioStreamPlayer" parent="."]
+
+[node name="HUD" type="CanvasLayer" parent="."]
+
+[node name="MarginContainer" type="MarginContainer" parent="HUD"]
+anchors_preset = 10
+anchor_right = 1.0
+offset_bottom = 90.0
+grow_horizontal = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 10
+
+[node name="VBoxContainer" type="VBoxContainer" parent="HUD/MarginContainer"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="TopRow" type="HBoxContainer" parent="HUD/MarginContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_constants/separation = 25
+
+[node name="HPBar" type="ProgressBar" parent="HUD/MarginContainer/VBoxContainer/TopRow"]
+custom_minimum_size = Vector2(240, 24)
+layout_mode = 2
+value = 100.0
+show_percentage = false
+
+[node name="HPLabel" type="Label" parent="HUD/MarginContainer/VBoxContainer/TopRow/HPBar"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 13
+text = "PV : 100 / 100"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="TimerLabel" type="Label" parent="HUD/MarginContainer/VBoxContainer/TopRow"]
+custom_minimum_size = Vector2(100, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.95, 0.4, 1)
+theme_override_font_sizes/font_size = 16
+text = "⏱️ 00:00"
+horizontal_alignment = 1
+
+[node name="KillsLabel" type="Label" parent="HUD/MarginContainer/VBoxContainer/TopRow"]
+custom_minimum_size = Vector2(120, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.4, 0.4, 1)
+theme_override_font_sizes/font_size = 16
+text = "💀 Kills : 0"
+
+[node name="XPBar" type="ProgressBar" parent="HUD/MarginContainer/VBoxContainer"]
+custom_minimum_size = Vector2(0, 18)
+layout_mode = 2
+show_percentage = false
+
+[node name="XPLabel" type="Label" parent="HUD/MarginContainer/VBoxContainer/XPBar"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(0.2, 1, 0.8, 1)
+theme_override_font_sizes/font_size = 12
+text = "Niveau 1  (XP: 0 / 30)"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="PassiveItemsPanel" type="PanelContainer" parent="HUD"]
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 18.0
+offset_top = -180.0
+offset_right = 290.0
+offset_bottom = -16.0
+grow_vertical = 0
+
+[node name="PassivesLabel" type="Label" parent="HUD/PassiveItemsPanel"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9, 0.9, 0.95, 1)
+theme_override_font_sizes/font_size = 12
+text = "ITEMS & ARMES"
+
+[node name="LevelUpModal" type="PanelContainer" parent="HUD"]
+process_mode = 2
+visible = false
+custom_minimum_size = Vector2(680, 260)
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -340.0
+offset_top = -130.0
+offset_right = 340.0
+offset_bottom = 130.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBox" type="VBoxContainer" parent="HUD/LevelUpModal"]
+layout_mode = 2
+theme_override_constants/separation = 16
+alignment = 1
+
+[node name="Title" type="Label" parent="HUD/LevelUpModal/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.85, 0.2, 1)
+theme_override_font_sizes/font_size = 22
+text = "★ MONTÉE DE NIVEAU ★"
+horizontal_alignment = 1
+
+[node name="ChoicesContainer" type="HBoxContainer" parent="HUD/LevelUpModal/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 14
+alignment = 1
+
+[node name="GameOverScreen" type="PanelContainer" parent="HUD"]
+process_mode = 2
+visible = false
+custom_minimum_size = Vector2(450, 280)
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -225.0
+offset_top = -140.0
+offset_right = 225.0
+offset_bottom = 140.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBox" type="VBoxContainer" parent="HUD/GameOverScreen"]
+layout_mode = 2
+theme_override_constants/separation = 14
+alignment = 1
+
+[node name="Title" type="Label" parent="HUD/GameOverScreen/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.2, 0.2, 1)
+theme_override_font_sizes/font_size = 24
+text = "VOUS AVEZ SUCCOMBÉ"
+horizontal_alignment = 1
+
+[node name="StatsLabel" type="Label" parent="HUD/GameOverScreen/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.85, 0.85, 0.9, 1)
+theme_override_font_sizes/font_size = 14
+text = "Temps survécu : 00:00"
+horizontal_alignment = 1
+
+[node name="RestartButton" type="Button" parent="HUD/GameOverScreen/VBox"]
+custom_minimum_size = Vector2(0, 42)
+layout_mode = 2
+text = "Recommencer"
+
+[node name="MenuButton" type="Button" parent="HUD/GameOverScreen/VBox"]
+custom_minimum_size = Vector2(0, 38)
+layout_mode = 2
+text = "Menu Principal"
