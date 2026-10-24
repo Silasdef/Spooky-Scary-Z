@@ -90,13 +90,13 @@ func _update_gun_orientation(aim_dir: Vector2) -> void:
 	var is_aiming_left = (aim_dir.x < 0)
 	sprite.flip_v = is_aiming_left
 	if is_aiming_left:
-		# Positionné en avant du joueur (20px vers l'avant, main gauche)
-		sprite.position = Vector2(20.0, -4.0)
-		sprite.offset = Vector2(150.0, 48.0)
+		# Positionné au niveau de la main du joueur (16px avant, main gauche)
+		sprite.position = Vector2(16.0, -4.0)
+		sprite.offset = Vector2(55.0, 2.0)
 	else:
-		# Positionné en avant du joueur (20px vers l'avant, main droite)
-		sprite.position = Vector2(20.0, 4.0)
-		sprite.offset = Vector2(150.0, -48.0)
+		# Positionné au niveau de la main du joueur (16px avant, main droite)
+		sprite.position = Vector2(16.0, 4.0)
+		sprite.offset = Vector2(55.0, -2.0)
 
 func _find_closest_enemy() -> Node2D:
 	var enemies = get_tree().get_nodes_in_group("enemies")
@@ -130,8 +130,8 @@ func _fire_laser_at(target: Node2D, aim_dir: Vector2) -> void:
 		dmg_mult *= 1.35
 		extra_pierce = 2
 		
-	# Spawn du projectile directement à la sortie du canon (56px en avant)
-	var muzzle_pos = global_position + dir * 56.0
+	# Spawn du projectile directement à la sortie du canon (40px en avant)
+	var muzzle_pos = global_position + dir * 40.0
 	proj.setup(muzzle_pos, dir, dmg_mult, extra_pierce, projectile_speed, base_damage)
 	
 	if audio_player.stream != null:
