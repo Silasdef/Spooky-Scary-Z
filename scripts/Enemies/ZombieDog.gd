@@ -11,11 +11,17 @@ const AUDIO_GROWL_PATH: String = "res://assets/audio/dog_growl.wav"
 # ÉQUILIBRAGE JAM (Chien Zombie - Rapide et agressif)
 # ==============================================================================
 @export_group("Equilibrage Chien Zombie")
-@export var dog_health: float = 18.0           ## Moins de vie mais compense par la vitesse
+@export var dog_health: float = 20.0           ## Tué en 1 balle de pistolet (20 dégâts)
 @export var dog_speed: float = 165.0          ## Vitesse d'assaut très rapide
 @export var dog_contact_damage: float = 8.0   ## Dégâts des morsures rapides
 
 var running_wiggle: float = 0.0
+
+func _init() -> void:
+	max_health = dog_health
+	current_health = dog_health
+	move_speed = dog_speed
+	contact_damage = dog_contact_damage
 
 func _ready() -> void:
 	max_health = dog_health

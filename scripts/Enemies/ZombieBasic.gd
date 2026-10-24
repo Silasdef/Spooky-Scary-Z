@@ -11,12 +11,18 @@ const SPRITE_PUMPKIN_PATH: String = "res://assets/sprites/zombie_pumpkin.png"
 # ÉQUILIBRAGE JAM (Zombie Basique)
 # ==============================================================================
 @export_group("Equilibrage Zombie")
-@export var zombie_health: float = 30.0        ## PV du zombie standard
+@export var zombie_health: float = 40.0        ## PV du zombie standard (tué en 2 balles de 20 dégâts)
 @export var zombie_speed: float = 65.0         ## Vitesse lente et implacable
 @export var zombie_contact_damage: float = 12.0 ## Dégâts d'une morsure
 
 # Variant Citrouille (1 chance sur 8)
 var is_pumpkin_head: bool = false
+
+func _init() -> void:
+	max_health = zombie_health
+	current_health = zombie_health
+	move_speed = zombie_speed
+	contact_damage = zombie_contact_damage
 
 func _ready() -> void:
 	max_health = zombie_health
@@ -29,8 +35,8 @@ func _ready() -> void:
 	is_pumpkin_head = (randi() % 8 == 0)
 	
 	if is_pumpkin_head:
-		# Légère variation de stats pour la citrouille
-		max_health *= 1.2
+		# Variante citrouille visuelle (tous les zombies de base meurent en 2 balles)
+		max_health = zombie_health
 		current_health = max_health
 		if ResourceLoader.exists(SPRITE_PUMPKIN_PATH):
 			sprite.texture = load(SPRITE_PUMPKIN_PATH)

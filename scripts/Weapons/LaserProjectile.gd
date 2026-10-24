@@ -8,11 +8,11 @@ const SPRITE_PATH: String = "res://assets/sprites/laser_projectile.png"
 const AUDIO_IMPACT_PATH: String = "res://assets/audio/laser_hit.wav"
 
 # ==============================================================================
-# ÉQUILIBRAGE JAM (Projectile Laser BO2 - Nerfé)
+# ÉQUILIBRAGE JAM (Projectile Laser BO2)
 # ==============================================================================
 @export_group("Equilibrage Laser")
-@export var speed: float = 380.0             ## Vitesse ralentie du projectile laser (px/s)
-@export var damage: float = 14.0             ## Dégâts réduits infligés aux ennemis (nerf)
+@export var speed: float = 400.0             ## Vitesse du projectile laser (px/s)
+@export var damage: float = 20.0             ## Dégâts infligés (20 PV = 2 balles pour un zombie à 40 PV, 1 balle pour un chien à 20 PV)
 @export var pierce_count: int = 1            ## Nombre d'ennemis traversés avant disparition
 @export var lifetime: float = 2.5            ## Durée de vie maximale en secondes
 
