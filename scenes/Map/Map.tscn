@@ -114,6 +114,10 @@ collision_mask = 6
 [node name="Player" parent="." instance=ExtResource("2_player")]
 
 [node name="BGMPlayer" type="AudioStreamPlayer" parent="."]
+bus = &"Music"
+
+[node name="StartJinglePlayer" type="AudioStreamPlayer" parent="."]
+bus = &"SFX"
 
 [node name="HUD" type="CanvasLayer" parent="."]
 

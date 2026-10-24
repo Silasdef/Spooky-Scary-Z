@@ -4,6 +4,7 @@ class_name GameMap
 # ==============================================================================
 # CHEMINS D'ACCÈS ASSETS
 # ==============================================================================
+const AUDIO_GAME_START_PATH: String = "res://assets/audio/lemodezombie.mp3"
 const AUDIO_GAME_BGM_PATH: String = "res://assets/audio/game_theme.wav"
 const MAP_TEXTURE_PATH: String = "res://assets/sprites/map_apocalyptic_city_full.png"
 const MAP_TEXTURE_FALLBACK: String = "res://assets/sprites/map_apocalyptic_city_seamless.png"
@@ -58,6 +59,7 @@ var scene_chest: PackedScene = null
 @onready var btn_pause_resume: Button = $HUD/PauseModal/Margin/VBox/ResumeButton
 @onready var btn_pause_menu: Button = $HUD/PauseModal/Margin/VBox/MenuButton
 @onready var bgm_player: AudioStreamPlayer = $BGMPlayer
+@onready var start_jingle_player: AudioStreamPlayer = $StartJinglePlayer
 
 func _ready() -> void:
 	add_to_group("game_map")
@@ -82,6 +84,18 @@ func _ready() -> void:
 	btn_pause_resume.pressed.connect(_on_resume_pressed)
 	btn_pause_menu.pressed.connect(_on_menu_pressed)
 	
+	# Jingle d'ouverture mythique au commencement de la partie (uniquement au début, sans boucle)
+	if ResourceLoader.exists(AUDIO_GAME_START_PATH):
+		var start_stream = load(AUDIO_GAME_START_PATH)
+		if start_stream is AudioStreamMP3:
+			start_stream.loop = false
+		if start_jingle_player != null:
+			start_jingle_player.stream = start_stream
+			start_jingle_player.play()
+		elif bgm_player != null:
+			bgm_player.stream = start_stream
+			bgm_player.play()
+
 	if ResourceLoader.exists(AUDIO_GAME_BGM_PATH):
 		bgm_player.stream = load(AUDIO_GAME_BGM_PATH)
 		bgm_player.play()
