@@ -16,7 +16,7 @@ const AUDIO_HURT_PATH: String = "res://assets/audio/enemy_hurt.wav"
 @export var contact_damage: float = 10.0        ## Dégâts infligés au joueur par contact
 @export var contact_radius: float = 28.0        ## Distance de frappe au contact (pas de collision physique bloquante)
 @export var attack_cooldown: float = 0.8        ## Fréquence des coups au corps à corps
-@export var xp_drop_chance: float = 1.0         ## Chance de drop d'une gemme d'XP (1.0 = 100%)
+@export var xp_drop_chance: float = 0.5         ## Chance de drop d'une gemme d'XP (0.5 = 50%, 1 chance sur 2)
 
 var current_health: float = 40.0
 var knockback_velocity: Vector2 = Vector2.ZERO
