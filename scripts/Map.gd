@@ -5,7 +5,7 @@ class_name GameMap
 # CHEMINS D'ACCÈS ASSETS
 # ==============================================================================
 const AUDIO_GAME_START_PATH: String = "res://assets/audio/lemodezombie.mp3"
-const AUDIO_GAME_BGM_PATH: String = "res://assets/audio/game_theme.wav"
+const AUDIO_GAME_BGM_PATH: String = "res://assets/audio/SpookySong.mp3"
 const SAVE_GAME_PATH: String = "user://savegame.json"
 const MAP_TEXTURE_PATH: String = "res://assets/sprites/map_apocalyptic_city_full.png"
 const MAP_TEXTURE_FALLBACK: String = "res://assets/sprites/map_apocalyptic_city_seamless.png"
@@ -29,6 +29,8 @@ var spawn_timer: float = 0.0
 var last_boss_time: float = 0.0
 var is_game_over: bool = false
 var upgrade_queue: Array[String] = []
+var active_chest_music_count: int = 0
+var was_bgm_paused_by_menu: bool = false
 
 # Références aux scènes préchargées
 var scene_zombie_basic: PackedScene = null
@@ -65,6 +67,8 @@ var scene_chest: PackedScene = null
 
 func _ready() -> void:
 	add_to_group("game_map")
+	if bgm_player != null:
+		bgm_player.process_mode = Node.PROCESS_MODE_ALWAYS
 	_preload_scenes()
 	_setup_arena_walls()
 	_spawn_initial_chests()
@@ -87,20 +91,21 @@ func _ready() -> void:
 	btn_pause_menu.pressed.connect(_on_menu_pressed)
 	
 	# Jingle d'ouverture mythique au commencement de la partie (uniquement au début, sans boucle)
+	# SpookySong.mp3 commence après la fin de lemodezombie.mp3
 	if ResourceLoader.exists(AUDIO_GAME_START_PATH):
 		var start_stream = load(AUDIO_GAME_START_PATH)
 		if start_stream is AudioStreamMP3:
 			start_stream.loop = false
 		if start_jingle_player != null:
 			start_jingle_player.stream = start_stream
+			if not start_jingle_player.finished.is_connected(_on_start_jingle_finished):
+				start_jingle_player.finished.connect(_on_start_jingle_finished)
 			start_jingle_player.play()
 		elif bgm_player != null:
 			bgm_player.stream = start_stream
 			bgm_player.play()
-
-	if ResourceLoader.exists(AUDIO_GAME_BGM_PATH):
-		bgm_player.stream = load(AUDIO_GAME_BGM_PATH)
-		bgm_player.play()
+	else:
+		_start_bgm()
 		
 	# Initialisation de la texture de ville apocalyptique
 	if background != null and background.texture == null:
@@ -167,11 +172,19 @@ func _spawn_initial_chests() -> void:
 	for off in offsets:
 		var chest = scene_chest.instantiate() as Node2D
 		chest.position = off
+		if chest.has_signal("chest_music_started"):
+			chest.chest_music_started.connect(on_chest_music_started)
+		if chest.has_signal("chest_music_finished"):
+			chest.chest_music_finished.connect(on_chest_music_finished)
 		chests_container.add_child(chest)
 
 func _process(delta: float) -> void:
 	if is_game_over:
 		return
+		
+	# Attend bien que la musique de l'ouverture du coffre soit complètement finie pour relancer la musique
+	if is_any_chest_music_playing() and bgm_player != null and bgm_player.playing and not bgm_player.stream_paused:
+		bgm_player.stream_paused = true
 		
 	game_time += delta
 	_update_hud_timer_and_kills()
@@ -371,38 +384,28 @@ func _update_hud_timer_and_kills() -> void:
 func _update_passives_display() -> void:
 	if not is_instance_valid(player):
 		return
-	var status = "ITEMS & ARMES :
-"
+	var status = "ITEMS & ARMES :\n"
 	if player.weapon_laser_gun != null:
 		var lvl = player.weapon_laser_gun.weapon_level
-		status += "• Pistolet Laser BO2 [%s]
-" % ("Niv %d (MAX)" % lvl if lvl >= 5 else "Niv %d" % lvl)
+		status += "• Pistolet Laser : %s\n" % ("Niv %d MAX" % lvl if lvl >= 5 else "Niv %d" % lvl)
 	else:
-		status += "• Pistolet Laser BO2 [Non possédé]
-"
+		status += "• Pistolet Laser : Non possédé\n"
 		
 	if player.weapon_dragonslayer != null:
 		var lvl = player.weapon_dragonslayer.weapon_level
-		status += "• Dragonslayer Guts [%s]
-" % ("Niv %d (MAX)" % lvl if lvl >= 5 else "Niv %d" % lvl)
+		status += "• Dragonslayer : %s\n" % ("Niv %d MAX" % lvl if lvl >= 5 else "Niv %d" % lvl)
 	else:
-		status += "• Dragonslayer Guts [Non possédé]
-"
+		status += "• Dragonslayer : Non possédé\n"
 		
 	if player.weapon_boomerang != null:
 		var lvl = player.weapon_boomerang.weapon_level
-		status += "• Boomerang Communiste [%s]
-" % ("Niv %d (MAX)" % lvl if lvl >= 5 else "Niv %d" % lvl)
+		status += "• Boomerang Communiste : %s\n" % ("Niv %d MAX" % lvl if lvl >= 5 else "Niv %d" % lvl)
 	else:
-		status += "• Boomerang Communiste [Non possédé]
-"
+		status += "• Boomerang Communiste : Non possédé\n"
 		
-	status += "• Dash : %s
-" % ("ACTIF (MAX)" if player.has_dash else "Inactif")
-	status += "• Régénération : %s
-" % ("ACTIF (MAX)" if player.has_regen else "Inactif")
-	status += "• Tayon (Aimant XP) : %s
-" % ("ACTIF (MAX)" if player.has_tayon else "Inactif")
+	status += "• Bottes de Dash : %s\n" % ("ACTIF MAX" if player.has_dash else "Inactif")
+	status += "• Régénération : %s\n" % ("ACTIF MAX" if player.has_regen else "Inactif")
+	status += "• Aimant Tayon : %s\n" % ("ACTIF MAX" if player.has_tayon else "Inactif")
 	passives_label.text = status
 
 func _on_player_hp_changed(curr: float, mx: float) -> void:
@@ -413,7 +416,7 @@ func _on_player_hp_changed(curr: float, mx: float) -> void:
 func _on_player_xp_changed(curr: int, req: int, lvl: int) -> void:
 	xp_bar.max_value = req
 	xp_bar.value = curr
-	xp_label.text = "Niveau %d  (XP: %d / %d)" % [lvl, curr, req]
+	xp_label.text = "Niveau %d - XP : %d / %d" % [lvl, curr, req]
 
 func _on_player_level_up(lvl: int) -> void:
 	request_upgrade("★ MONTÉE DE NIVEAU %d ★" % lvl)
@@ -441,23 +444,21 @@ func _show_upgrade_modal_direct(modal_title: String) -> void:
 		
 	var pool: Array[Dictionary] = []
 	
-	# 1. Pistolet Laser BO2
+	# 1. Pistolet Laser
 	if player.weapon_laser_gun == null:
 		pool.append({
 			"id": "laser_gun",
 			"type": "weapon",
-			"title": "Pistolet Laser (BO2)",
-			"desc": "★ NOUVELLE ARME ★
-Tirs laser vert perçant"
+			"title": "Pistolet Laser",
+			"desc": "★ NOUVELLE ARME ★\nTirs laser vert perçant"
 		})
 	elif player.weapon_laser_gun.weapon_level < 5:
 		var next_lvl = player.weapon_laser_gun.weapon_level + 1
 		pool.append({
 			"id": "laser_gun",
 			"type": "weapon",
-			"title": "Pistolet Laser (BO2)",
-			"desc": "★ AMÉLIORATION (Niv %d) ★
-+25%% Dégâts & Cadence" % next_lvl
+			"title": "Pistolet Laser",
+			"desc": "★ AMÉLIORATION Niv %d ★\n+25%% Dégâts & Cadence" % next_lvl
 		})
 	# Si niveau max (>= 5) : NE PLUS PROPOSER !
 	
@@ -466,17 +467,16 @@ Tirs laser vert perçant"
 		pool.append({
 			"id": "dragonslayer",
 			"type": "weapon",
-			"title": "Dragonslayer (Guts)",
-			"desc": "★ NOUVELLE ARME ★
-Épée colossale balayant en arc"
+			"title": "Dragonslayer",
+			"desc": "★ NOUVELLE ARME ★\nÉpée colossale balayant en arc"
 		})
 	elif player.weapon_dragonslayer.weapon_level < 5:
 		var next_lvl = player.weapon_dragonslayer.weapon_level + 1
 		pool.append({
 			"id": "dragonslayer",
 			"type": "weapon",
-			"title": "Dragonslayer (Guts)",
-			"desc": "★ AMÉLIORATION (Niv %d) ★\nLame colossale allongée & Arc géant" % next_lvl
+			"title": "Dragonslayer",
+			"desc": "★ AMÉLIORATION Niv %d ★\nLame colossale allongée & Arc géant" % next_lvl
 		})
 	# Si niveau max (>= 5) : NE PLUS PROPOSER !
 	
@@ -494,22 +494,21 @@ Tirs laser vert perçant"
 			"id": "boomerang",
 			"type": "weapon",
 			"title": "Boomerang Communiste",
-			"desc": "★ AMÉLIORATION (Niv %d) ★\n+%d Boomerangs orbitaux simultanés" % [next_lvl, next_lvl]
+			"desc": "★ AMÉLIORATION Niv %d ★\n+%d Boomerangs orbitaux simultanés" % [next_lvl, next_lvl]
 		})
 	# Si niveau max (>= 5) : NE PLUS PROPOSER !
 	
-	# 4. Bottes de Dash (Passif)
+	# 4. Bottes de Dash
 	if not player.has_dash:
 		pool.append({
 			"id": "dash",
 			"type": "passive",
 			"title": "Bottes de Dash",
-			"desc": "★ NOUVEAU PASSIF ★
-Dash instantané vitesse x3 (Espace)"
+			"desc": "★ NOUVEAU PASSIF ★\nDash instantané vitesse x3 - Espace"
 		})
 	# Si déjà possédé : NE PLUS PROPOSER !
 	
-	# 5. Régénération (Passif)
+	# 5. Régénération
 	if not player.has_regen:
 		pool.append({
 			"id": "regen",
@@ -519,14 +518,13 @@ Dash instantané vitesse x3 (Espace)"
 		})
 	# Si déjà possédé : NE PLUS PROPOSER !
 	
-	# 6. Tayon (Aimant XP) (Passif)
+	# 6. Aimant Tayon
 	if not player.has_tayon:
 		pool.append({
 			"id": "tayon",
 			"type": "passive",
-			"title": "Tayon (Aimant XP)",
-			"desc": "★ NOUVEAU PASSIF ★
-Rayon d'aspiration d'XP accru (+160%)"
+			"title": "Aimant Tayon",
+			"desc": "★ NOUVEAU PASSIF ★\nRayon d'aspiration d'XP accru +160%"
 		})
 	# Si déjà possédé : NE PLUS PROPOSER !
 	
@@ -602,9 +600,16 @@ func _on_upgrade_resolved() -> void:
 	else:
 		levelup_modal.visible = false
 		get_tree().paused = false
+		# Attend bien que la musique de l'ouverture du coffre soit complètement finie pour relancer la musique
+		if is_any_chest_music_playing() and bgm_player != null:
+			bgm_player.stream_paused = true
 
 func _on_player_died() -> void:
 	is_game_over = true
+	if bgm_player != null and bgm_player.playing:
+		bgm_player.stop()
+	if start_jingle_player != null and start_jingle_player.playing:
+		start_jingle_player.stop()
 	# Supprime la sauvegarde en cas de défaite pour ne pas pouvoir continuer une partie perdue
 	if FileAccess.file_exists(SAVE_GAME_PATH):
 		DirAccess.remove_absolute(SAVE_GAME_PATH)
@@ -614,6 +619,54 @@ func _on_player_died() -> void:
 	final_stats_label.text = "⏱️ Temps survécu : %02d:%02d\n💀 Ennemis abattus : %d\n⚡ Niveau atteint : %d" % [mins, secs, player.enemies_killed, player.current_level]
 	game_over_screen.visible = true
 	btn_restart.grab_focus()
+
+# ==============================================================================
+# GESTION AUDIO (Jingle début, SpookySong BGM & Coffres)
+# ==============================================================================
+func _on_start_jingle_finished() -> void:
+	if not is_any_chest_music_playing():
+		_start_bgm()
+
+func _start_bgm() -> void:
+	if is_any_chest_music_playing():
+		return
+	if ResourceLoader.exists(AUDIO_GAME_BGM_PATH) and bgm_player != null:
+		if bgm_player.stream == null or bgm_player.stream.resource_path != AUDIO_GAME_BGM_PATH:
+			var bgm_stream = load(AUDIO_GAME_BGM_PATH)
+			if bgm_stream is AudioStreamMP3:
+				bgm_stream.loop = true
+			bgm_player.stream = bgm_stream
+		if not bgm_player.playing:
+			bgm_player.play()
+		bgm_player.stream_paused = false
+
+func is_any_chest_music_playing() -> bool:
+	if active_chest_music_count > 0:
+		return true
+	var chests = get_tree().get_nodes_in_group("chests")
+	for c in chests:
+		if is_instance_valid(c):
+			if "is_chest_music_playing" in c and c.is_chest_music_playing:
+				return true
+			if "audio_jingle" in c and c.audio_jingle != null and c.audio_jingle.playing:
+				return true
+	return false
+
+func on_chest_music_started() -> void:
+	active_chest_music_count += 1
+	if bgm_player != null and bgm_player.playing:
+		bgm_player.stream_paused = true
+
+func on_chest_music_finished() -> void:
+	active_chest_music_count = max(0, active_chest_music_count - 1)
+	# Attend bien que la musique de l'ouverture du coffre soit complètement finie pour relancer la musique
+	if is_any_chest_music_playing():
+		return
+	if bgm_player != null:
+		if bgm_player.stream_paused:
+			bgm_player.stream_paused = false
+		elif not bgm_player.playing and (start_jingle_player == null or not start_jingle_player.playing):
+			_start_bgm()
 
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_WM_CLOSE_REQUEST:
@@ -664,10 +717,17 @@ func _open_pause_modal() -> void:
 	pause_modal.visible = true
 	get_tree().paused = true
 	btn_pause_resume.grab_focus()
+	if bgm_player != null and bgm_player.playing and not bgm_player.stream_paused:
+		bgm_player.stream_paused = true
+		was_bgm_paused_by_menu = true
 
 func _on_resume_pressed() -> void:
 	pause_modal.visible = false
 	get_tree().paused = false
+	if was_bgm_paused_by_menu:
+		was_bgm_paused_by_menu = false
+		if not is_any_chest_music_playing() and bgm_player != null:
+			bgm_player.stream_paused = false
 
 func _mark_input_as_handled() -> void:
 	if is_inside_tree():

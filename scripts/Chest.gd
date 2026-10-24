@@ -1,6 +1,9 @@
 extends Area2D
 class_name Chest
 
+signal chest_music_started
+signal chest_music_finished
+
 # ==============================================================================
 # CHEMINS D'ACCÈS ASSETS
 # ==============================================================================
@@ -24,16 +27,17 @@ var target_player: CharacterBody2D = null
 
 # Objets / Armes potentiellement tirés par la boîte mystère
 const REWARDS = [
-	{"id": "laser_gun", "name": "Pistolet Laser (BO2)", "type": "weapon"},
-	{"id": "dragonslayer", "name": "Dragonslayer (Guts)", "type": "weapon"},
+	{"id": "laser_gun", "name": "Pistolet Laser", "type": "weapon"},
+	{"id": "dragonslayer", "name": "Dragonslayer", "type": "weapon"},
 	{"id": "boomerang", "name": "Boomerang Communiste", "type": "weapon"},
-	{"id": "dash", "name": "Item Passif : Dash", "type": "passive"},
-	{"id": "regen", "name": "Item Passif : Régénération", "type": "passive"},
-	{"id": "tayon", "name": "Item Passif : Tayon (Aimant XP)", "type": "passive"}
+	{"id": "dash", "name": "Bottes de Dash", "type": "passive"},
+	{"id": "regen", "name": "Régénération", "type": "passive"},
+	{"id": "tayon", "name": "Aimant Tayon", "type": "passive"}
 ]
 
 var chosen_reward: Dictionary = {}
 var roll_display_text: String = "???"
+var is_chest_music_playing: bool = false
 
 @onready var prompt_label: Label = $PromptLabel
 @onready var roll_label: Label = $RollLabel
@@ -59,6 +63,9 @@ func _ready() -> void:
 		
 	if ResourceLoader.exists(jingle_path):
 		audio_jingle.stream = load(jingle_path)
+		
+	if audio_jingle != null and not audio_jingle.finished.is_connected(_on_audio_jingle_finished):
+		audio_jingle.finished.connect(_on_audio_jingle_finished)
 		
 	queue_redraw()
 
@@ -97,8 +104,20 @@ func _open_chest() -> void:
 	
 	# Lancement du jingle musical mythique de la boîte mystère
 	if audio_jingle.stream != null:
+		is_chest_music_playing = true
 		audio_jingle.play()
+		chest_music_started.emit()
+		var game_map = get_tree().get_first_node_in_group("game_map")
+		if game_map != null and game_map.has_method("on_chest_music_started"):
+			game_map.on_chest_music_started()
 	queue_redraw()
+
+func _on_audio_jingle_finished() -> void:
+	is_chest_music_playing = false
+	chest_music_finished.emit()
+	var game_map = get_tree().get_first_node_in_group("game_map")
+	if game_map != null and game_map.has_method("on_chest_music_finished"):
+		game_map.on_chest_music_finished()
 
 func _complete_roll() -> void:
 	is_rolling = false
