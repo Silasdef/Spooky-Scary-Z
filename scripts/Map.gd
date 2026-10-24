@@ -11,14 +11,16 @@ const FRANKENSTEIN_SCENE_PATH: String = "res://scenes/Enemies/FrankensteinBoss.t
 const CHEST_SCENE_PATH: String = "res://scenes/Chest/Chest.tscn"
 
 # ==============================================================================
-# ÉQUILIBRAGE JAM (Arène, Spawns & Vagues)
+# ÉQUILIBRAGE JAM (Arène, Spawns & Densité Vampire Survivors)
 # ==============================================================================
-@export_group("Equilibrage Arene")
+@export_group("Equilibrage Arene & Densite")
 @export var arena_size: float = 3600.0           ## Taille totale de l'arène carrée (px)
-@export var base_spawn_interval: float = 1.4    ## Temps entre deux apparitions d'ennemis (sec)
-@export var min_spawn_interval: float = 0.45    ## Intervalle de spawn minimum au pic de difficulté
-@export var dog_spawn_time: float = 45.0        ## Temps de survie avant apparition des Chiens Zombies
-@export var boss_spawn_interval: float = 90.0   ## Fréquence d'apparition du Boss Frankenstein
+@export var base_spawn_interval: float = 0.28    ## Temps entre deux apparitions d'ennemis (sec) - spawn fréquent
+@export var min_spawn_interval: float = 0.08    ## Intervalle de spawn minimum au pic de difficulté
+@export var max_enemies: int = 400              ## Limite maximale d'ennemis simultanés sur la carte (saturation d'écran)
+@export var spawn_batch_size: int = 2           ## Nombre d'ennemis générés par vague de spawn
+@export var dog_spawn_time: float = 35.0        ## Temps de survie avant apparition des Chiens Zombies
+@export var boss_spawn_interval: float = 75.0   ## Fréquence d'apparition du Boss Frankenstein
 
 var game_time: float = 0.0
 var spawn_timer: float = 0.0
@@ -148,8 +150,17 @@ func _process(delta: float) -> void:
 func _spawn_enemy() -> void:
 	if not is_instance_valid(player):
 		return
+	if enemies_container.get_child_count() >= max_enemies:
+		return
 		
-	# Spawn en périphérie autour du joueur hors caméra (~750px)
+	var batch = spawn_batch_size + int(game_time / 100.0)
+	for b in range(batch):
+		if enemies_container.get_child_count() >= max_enemies:
+			break
+		_spawn_single_enemy()
+
+func _spawn_single_enemy() -> void:
+	# Spawn en périphérie autour du joueur hors caméra (~720-850px)
 	var spawn_dist = randf_range(720.0, 850.0)
 	var spawn_ang = randf() * TAU
 	var spawn_pos = player.global_position + Vector2.from_angle(spawn_ang) * spawn_dist
