@@ -6,6 +6,8 @@
 size = Vector2(95, 30)
 
 [node name="Dragonslayer" type="Node2D"]
+z_index = 2
+position = Vector2(0, -10)
 script = ExtResource("1_ds")
 
 [node name="SwordArea" type="Area2D" parent="."]
