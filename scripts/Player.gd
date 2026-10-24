@@ -37,7 +37,7 @@ const AUDIO_LEVELUP_PATH: String = "res://assets/audio/level_up.wav"
 # Note : AUCUNE frame d'invincibilité pendant le dash (règle stricte d'équilibrage)
 
 @export_group("Equilibrage Regeneration")
-@export var regen_hps: float = 3.5              ## Points de vie régénérés par seconde
+@export var regen_hps: float = 0.75              ## Points de vie régénérés par seconde (équilibré, 0.75 PV/s)
 
 @export_group("Equilibrage Tayon")
 @export var tayon_radius_multiplier: float = 2.6 ## Multiplicateur de zone d'XP avec Tayon

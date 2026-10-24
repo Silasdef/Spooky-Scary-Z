@@ -1,10 +1,108 @@
-[gd_scene load_steps=3 format=3]
+[gd_scene load_steps=27 format=3]
 
 [ext_resource type="Script" path="res://scripts/Map.gd" id="1_map"]
 [ext_resource type="PackedScene" path="res://scenes/Player/Player.tscn" id="2_player"]
+[ext_resource type="Texture2D" path="res://assets/sprites/map_apocalyptic_city_full.png" id="3_map_tex"]
+[ext_resource type="Texture2D" path="res://assets/sprites/ui/button_spooky_normal.png" id="4_btn_norm"]
+[ext_resource type="Texture2D" path="res://assets/sprites/ui/button_spooky_hover.png" id="5_btn_hov"]
+[ext_resource type="Texture2D" path="res://assets/sprites/ui/button_spooky_pressed.png" id="6_btn_press"]
+[ext_resource type="Texture2D" path="res://assets/sprites/ui/game_over_skull.png" id="7_skull"]
+[ext_resource type="Texture2D" path="res://assets/sprites/ui/hud_hp_bar_bg.png" id="8_hp_bg"]
+[ext_resource type="Texture2D" path="res://assets/sprites/ui/hud_hp_bar_fill.png" id="9_hp_fill"]
+[ext_resource type="Texture2D" path="res://assets/sprites/ui/hud_hp_icon.png" id="10_hp_icon"]
+[ext_resource type="Texture2D" path="res://assets/sprites/ui/hud_xp_bar_bg.png" id="11_xp_bg"]
+[ext_resource type="Texture2D" path="res://assets/sprites/ui/hud_xp_bar_fill.png" id="12_xp_fill"]
+[ext_resource type="Texture2D" path="res://assets/sprites/ui/hud_badge_bg.png" id="13_badge"]
+[ext_resource type="Texture2D" path="res://assets/sprites/ui/hud_panel_bg.png" id="14_panel"]
+[ext_resource type="Texture2D" path="res://assets/sprites/ui/hud_timer_icon.png" id="15_timer_icon"]
+[ext_resource type="Texture2D" path="res://assets/sprites/ui/hud_kill_icon.png" id="16_kill_icon"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_game_over_panel"]
+bg_color = Color(0.06, 0.05, 0.08, 0.96)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.85, 0.15, 0.15, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+shadow_color = Color(0, 0, 0, 0.85)
+shadow_size = 16
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_spooky_normal"]
+texture = ExtResource("4_btn_norm")
+texture_margin_left = 16.0
+texture_margin_top = 8.0
+texture_margin_right = 16.0
+texture_margin_bottom = 8.0
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_spooky_hover"]
+texture = ExtResource("5_btn_hov")
+texture_margin_left = 16.0
+texture_margin_top = 8.0
+texture_margin_right = 16.0
+texture_margin_bottom = 8.0
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_spooky_pressed"]
+texture = ExtResource("6_btn_press")
+texture_margin_left = 16.0
+texture_margin_top = 8.0
+texture_margin_right = 16.0
+texture_margin_bottom = 8.0
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_hp_bg"]
+texture = ExtResource("8_hp_bg")
+texture_margin_left = 6.0
+texture_margin_top = 6.0
+texture_margin_right = 6.0
+texture_margin_bottom = 6.0
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_hp_fill"]
+texture = ExtResource("9_hp_fill")
+texture_margin_left = 4.0
+texture_margin_top = 4.0
+texture_margin_right = 4.0
+texture_margin_bottom = 4.0
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_xp_bg"]
+texture = ExtResource("11_xp_bg")
+texture_margin_left = 5.0
+texture_margin_top = 5.0
+texture_margin_right = 5.0
+texture_margin_bottom = 5.0
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_xp_fill"]
+texture = ExtResource("12_xp_fill")
+texture_margin_left = 4.0
+texture_margin_top = 4.0
+texture_margin_right = 4.0
+texture_margin_bottom = 4.0
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_badge"]
+texture = ExtResource("13_badge")
+texture_margin_left = 8.0
+texture_margin_top = 6.0
+texture_margin_right = 8.0
+texture_margin_bottom = 6.0
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_panel"]
+texture = ExtResource("14_panel")
+texture_margin_left = 10.0
+texture_margin_top = 10.0
+texture_margin_right = 10.0
+texture_margin_bottom = 10.0
+content_margin_left = 12.0
+content_margin_top = 10.0
+content_margin_right = 12.0
+content_margin_bottom = 10.0
 
 [node name="Map" type="Node2D"]
 script = ExtResource("1_map")
+
+[node name="Background" type="Sprite2D" parent="."]
+texture = ExtResource("3_map_tex")
 
 [node name="ArenaWalls" type="StaticBody2D" parent="."]
 collision_mask = 6
@@ -35,11 +133,22 @@ theme_override_constants/separation = 8
 
 [node name="TopRow" type="HBoxContainer" parent="HUD/MarginContainer/VBoxContainer"]
 layout_mode = 2
-theme_override_constants/separation = 25
+theme_override_constants/separation = 16
+
+[node name="HPIcon" type="TextureRect" parent="HUD/MarginContainer/VBoxContainer/TopRow"]
+custom_minimum_size = Vector2(30, 30)
+layout_mode = 2
+size_flags_vertical = 4
+texture = ExtResource("10_hp_icon")
+expand_mode = 1
+stretch_mode = 5
 
 [node name="HPBar" type="ProgressBar" parent="HUD/MarginContainer/VBoxContainer/TopRow"]
-custom_minimum_size = Vector2(240, 24)
+custom_minimum_size = Vector2(260, 26)
 layout_mode = 2
+size_flags_vertical = 4
+theme_override_styles/background = SubResource("StyleBoxTexture_hp_bg")
+theme_override_styles/fill = SubResource("StyleBoxTexture_hp_fill")
 value = 100.0
 show_percentage = false
 
@@ -51,29 +160,71 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 1)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 1
 theme_override_font_sizes/font_size = 13
 text = "PV : 100 / 100"
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="TimerLabel" type="Label" parent="HUD/MarginContainer/VBoxContainer/TopRow"]
-custom_minimum_size = Vector2(100, 0)
+[node name="Spacer1" type="Control" parent="HUD/MarginContainer/VBoxContainer/TopRow"]
+custom_minimum_size = Vector2(10, 0)
 layout_mode = 2
-theme_override_colors/font_color = Color(1, 0.95, 0.4, 1)
-theme_override_font_sizes/font_size = 16
-text = "⏱️ 00:00"
+
+[node name="TimerIcon" type="TextureRect" parent="HUD/MarginContainer/VBoxContainer/TopRow"]
+custom_minimum_size = Vector2(28, 28)
+layout_mode = 2
+size_flags_vertical = 4
+texture = ExtResource("15_timer_icon")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="TimerLabel" type="Label" parent="HUD/MarginContainer/VBoxContainer/TopRow"]
+custom_minimum_size = Vector2(100, 32)
+layout_mode = 2
+size_flags_vertical = 4
+theme_override_styles/normal = SubResource("StyleBoxTexture_badge")
+theme_override_colors/font_color = Color(1, 0.92, 0.35, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 1)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 1
+theme_override_font_sizes/font_size = 15
+text = "00:00"
 horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Spacer2" type="Control" parent="HUD/MarginContainer/VBoxContainer/TopRow"]
+custom_minimum_size = Vector2(10, 0)
+layout_mode = 2
+
+[node name="KillsIcon" type="TextureRect" parent="HUD/MarginContainer/VBoxContainer/TopRow"]
+custom_minimum_size = Vector2(28, 28)
+layout_mode = 2
+size_flags_vertical = 4
+texture = ExtResource("16_kill_icon")
+expand_mode = 1
+stretch_mode = 5
 
 [node name="KillsLabel" type="Label" parent="HUD/MarginContainer/VBoxContainer/TopRow"]
-custom_minimum_size = Vector2(120, 0)
+custom_minimum_size = Vector2(120, 32)
 layout_mode = 2
-theme_override_colors/font_color = Color(1, 0.4, 0.4, 1)
-theme_override_font_sizes/font_size = 16
-text = "💀 Kills : 0"
+size_flags_vertical = 4
+theme_override_styles/normal = SubResource("StyleBoxTexture_badge")
+theme_override_colors/font_color = Color(1, 0.35, 0.35, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 1)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 1
+theme_override_font_sizes/font_size = 15
+text = "Kills : 0"
+horizontal_alignment = 1
+vertical_alignment = 1
 
 [node name="XPBar" type="ProgressBar" parent="HUD/MarginContainer/VBoxContainer"]
-custom_minimum_size = Vector2(0, 18)
+custom_minimum_size = Vector2(0, 20)
 layout_mode = 2
+theme_override_styles/background = SubResource("StyleBoxTexture_xp_bg")
+theme_override_styles/fill = SubResource("StyleBoxTexture_xp_fill")
 show_percentage = false
 
 [node name="XPLabel" type="Label" parent="HUD/MarginContainer/VBoxContainer/XPBar"]
@@ -83,7 +234,10 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_colors/font_color = Color(0.2, 1, 0.8, 1)
+theme_override_colors/font_color = Color(0.9, 1, 0.95, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 1)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 1
 theme_override_font_sizes/font_size = 12
 text = "Niveau 1  (XP: 0 / 30)"
 horizontal_alignment = 1
@@ -98,6 +252,7 @@ offset_top = -180.0
 offset_right = 290.0
 offset_bottom = -16.0
 grow_vertical = 0
+theme_override_styles/panel = SubResource("StyleBoxTexture_panel")
 
 [node name="PassivesLabel" type="Label" parent="HUD/PassiveItemsPanel"]
 layout_mode = 2
@@ -139,46 +294,183 @@ theme_override_constants/separation = 14
 alignment = 1
 
 [node name="GameOverScreen" type="PanelContainer" parent="HUD"]
-process_mode = 2
+process_mode = 3
 visible = false
-custom_minimum_size = Vector2(450, 280)
+custom_minimum_size = Vector2(480, 360)
 anchors_preset = 8
 anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -225.0
-offset_top = -140.0
-offset_right = 225.0
-offset_bottom = 140.0
+offset_left = -240.0
+offset_top = -180.0
+offset_right = 240.0
+offset_bottom = 180.0
 grow_horizontal = 2
 grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_game_over_panel")
 
-[node name="VBox" type="VBoxContainer" parent="HUD/GameOverScreen"]
+[node name="Margin" type="MarginContainer" parent="HUD/GameOverScreen"]
+layout_mode = 2
+theme_override_constants/margin_left = 32
+theme_override_constants/margin_top = 24
+theme_override_constants/margin_right = 32
+theme_override_constants/margin_bottom = 24
+
+[node name="VBox" type="VBoxContainer" parent="HUD/GameOverScreen/Margin"]
 layout_mode = 2
 theme_override_constants/separation = 14
 alignment = 1
 
-[node name="Title" type="Label" parent="HUD/GameOverScreen/VBox"]
+[node name="SkullIcon" type="TextureRect" parent="HUD/GameOverScreen/Margin/VBox"]
+custom_minimum_size = Vector2(64, 64)
+layout_mode = 2
+size_flags_horizontal = 4
+mouse_filter = 2
+texture = ExtResource("7_skull")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Title" type="Label" parent="HUD/GameOverScreen/Margin/VBox"]
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.2, 0.2, 1)
-theme_override_font_sizes/font_size = 24
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 1)
+theme_override_constants/shadow_offset_x = 2
+theme_override_constants/shadow_offset_y = 2
+theme_override_font_sizes/font_size = 26
 text = "VOUS AVEZ SUCCOMBÉ"
 horizontal_alignment = 1
 
-[node name="StatsLabel" type="Label" parent="HUD/GameOverScreen/VBox"]
+[node name="StatsLabel" type="Label" parent="HUD/GameOverScreen/Margin/VBox"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.85, 0.85, 0.9, 1)
-theme_override_font_sizes/font_size = 14
+theme_override_font_sizes/font_size = 15
 text = "Temps survécu : 00:00"
 horizontal_alignment = 1
 
-[node name="RestartButton" type="Button" parent="HUD/GameOverScreen/VBox"]
-custom_minimum_size = Vector2(0, 42)
+[node name="RestartButton" type="Button" parent="HUD/GameOverScreen/Margin/VBox"]
+custom_minimum_size = Vector2(0, 46)
 layout_mode = 2
-text = "Recommencer"
+focus_neighbor_top = NodePath("../MenuButton")
+focus_neighbor_bottom = NodePath("../MenuButton")
+theme_override_colors/font_color = Color(0.95, 0.95, 0.95, 1)
+theme_override_colors/font_hover_color = Color(1, 0.25, 0.25, 1)
+theme_override_colors/font_focus_color = Color(1, 0.25, 0.25, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 1)
+theme_override_constants/shadow_offset_x = 2
+theme_override_constants/shadow_offset_y = 2
+theme_override_font_sizes/font_size = 18
+theme_override_styles/normal = SubResource("StyleBoxTexture_spooky_normal")
+theme_override_styles/hover = SubResource("StyleBoxTexture_spooky_hover")
+theme_override_styles/pressed = SubResource("StyleBoxTexture_spooky_pressed")
+theme_override_styles/focus = SubResource("StyleBoxTexture_spooky_hover")
+text = "RECOMMENCER UNE PARTIE"
 
-[node name="MenuButton" type="Button" parent="HUD/GameOverScreen/VBox"]
-custom_minimum_size = Vector2(0, 38)
+[node name="MenuButton" type="Button" parent="HUD/GameOverScreen/Margin/VBox"]
+custom_minimum_size = Vector2(0, 44)
 layout_mode = 2
-text = "Menu Principal"
+focus_neighbor_top = NodePath("../RestartButton")
+focus_neighbor_bottom = NodePath("../RestartButton")
+theme_override_colors/font_color = Color(0.95, 0.95, 0.95, 1)
+theme_override_colors/font_hover_color = Color(1, 0.25, 0.25, 1)
+theme_override_colors/font_focus_color = Color(1, 0.25, 0.25, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 1)
+theme_override_constants/shadow_offset_x = 2
+theme_override_constants/shadow_offset_y = 2
+theme_override_font_sizes/font_size = 16
+theme_override_styles/normal = SubResource("StyleBoxTexture_spooky_normal")
+theme_override_styles/hover = SubResource("StyleBoxTexture_spooky_hover")
+theme_override_styles/pressed = SubResource("StyleBoxTexture_spooky_pressed")
+theme_override_styles/focus = SubResource("StyleBoxTexture_spooky_hover")
+text = "REVENIR AU MENU PRINCIPAL"
+
+[node name="PauseModal" type="PanelContainer" parent="HUD"]
+process_mode = 3
+visible = false
+custom_minimum_size = Vector2(440, 310)
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -220.0
+offset_top = -155.0
+offset_right = 220.0
+offset_bottom = 155.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_game_over_panel")
+
+[node name="Margin" type="MarginContainer" parent="HUD/PauseModal"]
+layout_mode = 2
+theme_override_constants/margin_left = 30
+theme_override_constants/margin_top = 22
+theme_override_constants/margin_right = 30
+theme_override_constants/margin_bottom = 22
+
+[node name="VBox" type="VBoxContainer" parent="HUD/PauseModal/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 14
+alignment = 1
+
+[node name="SkullIcon" type="TextureRect" parent="HUD/PauseModal/Margin/VBox"]
+custom_minimum_size = Vector2(52, 52)
+layout_mode = 2
+size_flags_horizontal = 4
+mouse_filter = 2
+texture = ExtResource("7_skull")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Title" type="Label" parent="HUD/PauseModal/Margin/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.25, 0.25, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 1)
+theme_override_constants/shadow_offset_x = 2
+theme_override_constants/shadow_offset_y = 2
+theme_override_font_sizes/font_size = 26
+text = "PARTIE EN PAUSE"
+horizontal_alignment = 1
+
+[node name="HintLabel" type="Label" parent="HUD/PauseModal/Margin/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.75, 0.75, 0.8, 1)
+theme_override_font_sizes/font_size = 13
+text = "Appuyez sur 'M' pour reprendre"
+horizontal_alignment = 1
+
+[node name="ResumeButton" type="Button" parent="HUD/PauseModal/Margin/VBox"]
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+focus_neighbor_top = NodePath("../MenuButton")
+focus_neighbor_bottom = NodePath("../MenuButton")
+theme_override_colors/font_color = Color(0.95, 0.95, 0.95, 1)
+theme_override_colors/font_hover_color = Color(1, 0.25, 0.25, 1)
+theme_override_colors/font_focus_color = Color(1, 0.25, 0.25, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 1)
+theme_override_constants/shadow_offset_x = 2
+theme_override_constants/shadow_offset_y = 2
+theme_override_font_sizes/font_size = 16
+theme_override_styles/normal = SubResource("StyleBoxTexture_spooky_normal")
+theme_override_styles/hover = SubResource("StyleBoxTexture_spooky_hover")
+theme_override_styles/pressed = SubResource("StyleBoxTexture_spooky_pressed")
+theme_override_styles/focus = SubResource("StyleBoxTexture_spooky_hover")
+text = "REPRENDRE (M)"
+
+[node name="MenuButton" type="Button" parent="HUD/PauseModal/Margin/VBox"]
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+focus_neighbor_top = NodePath("../ResumeButton")
+focus_neighbor_bottom = NodePath("../ResumeButton")
+theme_override_colors/font_color = Color(0.95, 0.95, 0.95, 1)
+theme_override_colors/font_hover_color = Color(1, 0.25, 0.25, 1)
+theme_override_colors/font_focus_color = Color(1, 0.25, 0.25, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 1)
+theme_override_constants/shadow_offset_x = 2
+theme_override_constants/shadow_offset_y = 2
+theme_override_font_sizes/font_size = 16
+theme_override_styles/normal = SubResource("StyleBoxTexture_spooky_normal")
+theme_override_styles/hover = SubResource("StyleBoxTexture_spooky_hover")
+theme_override_styles/pressed = SubResource("StyleBoxTexture_spooky_pressed")
+theme_override_styles/focus = SubResource("StyleBoxTexture_spooky_hover")
+text = "RETOURNER AU MENU"

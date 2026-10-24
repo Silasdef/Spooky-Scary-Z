@@ -5,6 +5,8 @@ class_name GameMap
 # CHEMINS D'ACCÈS ASSETS
 # ==============================================================================
 const AUDIO_GAME_BGM_PATH: String = "res://assets/audio/game_theme.wav"
+const MAP_TEXTURE_PATH: String = "res://assets/sprites/map_apocalyptic_city_full.png"
+const MAP_TEXTURE_FALLBACK: String = "res://assets/sprites/map_apocalyptic_city_seamless.png"
 const ZOMBIE_BASIC_SCENE_PATH: String = "res://scenes/Enemies/ZombieBasic.tscn"
 const ZOMBIE_DOG_SCENE_PATH: String = "res://scenes/Enemies/ZombieDog.tscn"
 const FRANKENSTEIN_SCENE_PATH: String = "res://scenes/Enemies/FrankensteinBoss.tscn"
@@ -31,6 +33,7 @@ var scene_zombie_dog: PackedScene = null
 var scene_frankenstein: PackedScene = null
 var scene_chest: PackedScene = null
 
+@onready var background: Sprite2D = $Background if has_node("Background") else null
 @onready var player: Player = $Player
 @onready var enemies_container: Node2D = $EnemiesContainer
 @onready var chests_container: Node2D = $ChestsContainer
@@ -48,9 +51,12 @@ var scene_chest: PackedScene = null
 @onready var levelup_modal: PanelContainer = $HUD/LevelUpModal
 @onready var choices_container: HBoxContainer = $HUD/LevelUpModal/VBox/ChoicesContainer
 @onready var game_over_screen: PanelContainer = $HUD/GameOverScreen
-@onready var final_stats_label: Label = $HUD/GameOverScreen/VBox/StatsLabel
-@onready var btn_restart: Button = $HUD/GameOverScreen/VBox/RestartButton
-@onready var btn_menu: Button = $HUD/GameOverScreen/VBox/MenuButton
+@onready var final_stats_label: Label = $HUD/GameOverScreen/Margin/VBox/StatsLabel
+@onready var btn_restart: Button = $HUD/GameOverScreen/Margin/VBox/RestartButton
+@onready var btn_menu: Button = $HUD/GameOverScreen/Margin/VBox/MenuButton
+@onready var pause_modal: PanelContainer = $HUD/PauseModal
+@onready var btn_pause_resume: Button = $HUD/PauseModal/Margin/VBox/ResumeButton
+@onready var btn_pause_menu: Button = $HUD/PauseModal/Margin/VBox/MenuButton
 @onready var bgm_player: AudioStreamPlayer = $BGMPlayer
 
 func _ready() -> void:
@@ -61,6 +67,7 @@ func _ready() -> void:
 	
 	levelup_modal.visible = false
 	game_over_screen.visible = false
+	pause_modal.visible = false
 	
 	# Connexions joueur
 	if is_instance_valid(player):
@@ -69,13 +76,25 @@ func _ready() -> void:
 		player.level_up.connect(_on_player_level_up)
 		player.player_died.connect(_on_player_died)
 		
-	# Boutons Game Over
+	# Boutons Game Over & Pause
 	btn_restart.pressed.connect(_on_restart_pressed)
 	btn_menu.pressed.connect(_on_menu_pressed)
+	btn_pause_resume.pressed.connect(_on_resume_pressed)
+	btn_pause_menu.pressed.connect(_on_menu_pressed)
 	
 	if ResourceLoader.exists(AUDIO_GAME_BGM_PATH):
 		bgm_player.stream = load(AUDIO_GAME_BGM_PATH)
 		bgm_player.play()
+		
+	# Initialisation de la texture de ville apocalyptique
+	if background != null and background.texture == null:
+		if ResourceLoader.exists(MAP_TEXTURE_PATH):
+			background.texture = load(MAP_TEXTURE_PATH)
+		elif ResourceLoader.exists(MAP_TEXTURE_FALLBACK):
+			background.texture = load(MAP_TEXTURE_FALLBACK)
+			background.texture_repeat = CanvasItem.TEXTURE_REPEAT_ENABLED
+			background.region_enabled = true
+			background.region_rect = Rect2(0, 0, arena_size, arena_size)
 		
 	queue_redraw()
 
@@ -148,6 +167,8 @@ func _process(delta: float) -> void:
 	if game_time - last_boss_time >= boss_spawn_interval:
 		_spawn_boss()
 		last_boss_time = game_time
+		
+	queue_redraw()
 
 func _calculate_spawn_interval() -> float:
 	if game_time < 25.0:
@@ -288,30 +309,34 @@ func _draw() -> void:
 	var half = arena_size * 0.5
 	var arena_rect = Rect2(-half, -half, arena_size, arena_size)
 	
-	# Sol dallé sombre
-	draw_rect(arena_rect, Color(0.08, 0.07, 0.09))
-	
-	# Trame / grille discrète d'ambiance pour ressentir la vitesse
-	var grid_step = 200.0
-	var x = -half
-	while x <= half:
-		draw_line(Vector2(x, -half), Vector2(x, half), Color(0.12, 0.11, 0.14), 1.0)
-		x += grid_step
-	var y = -half
-	while y <= half:
-		draw_line(Vector2(-half, y), Vector2(half, y), Color(0.12, 0.11, 0.14), 1.0)
-		y += grid_step
+	# Si aucun sprite de background n'est assigné, fallback sur sol sombre
+	if background == null or background.texture == null:
+		draw_rect(arena_rect, Color(0.08, 0.07, 0.09))
+		var grid_step = 200.0
+		var x = -half
+		while x <= half:
+			draw_line(Vector2(x, -half), Vector2(x, half), Color(0.12, 0.11, 0.14), 1.0)
+			x += grid_step
+		var y = -half
+		while y <= half:
+			draw_line(Vector2(-half, y), Vector2(half, y), Color(0.12, 0.11, 0.14), 1.0)
+			y += grid_step
+	else:
+		# Lueur radioactive animée au-dessus de la fissure toxique centrale
+		var pulse = 0.75 + 0.25 * sin(game_time * 3.5)
+		draw_circle(Vector2.ZERO, 90.0, Color(0.15, 0.9, 0.25, 0.10 * pulse))
+		draw_circle(Vector2.ZERO, 45.0, Color(0.4, 1.0, 0.4, 0.18 * pulse))
 		
 	# Mur d'enceinte / barrière physique fortifiée
-	draw_rect(arena_rect, Color(0.85, 0.2, 0.2, 0.8), false, 8.0)
-	draw_rect(Rect2(-half - 20, -half - 20, arena_size + 40, arena_size + 40), Color(0.3, 0.05, 0.05, 0.9), false, 12.0)
+	draw_rect(arena_rect, Color(0.9, 0.15, 0.15, 0.85), false, 8.0)
+	draw_rect(Rect2(-half - 20, -half - 20, arena_size + 40, arena_size + 40), Color(0.25, 0.04, 0.04, 0.95), false, 12.0)
 
 func _update_hud_timer_and_kills() -> void:
 	var mins = int(game_time) / 60
 	var secs = int(game_time) % 60
-	timer_label.text = "⏱️ %02d:%02d" % [mins, secs]
+	timer_label.text = "%02d:%02d" % [mins, secs]
 	if is_instance_valid(player):
-		kills_label.text = "💀 Kills : %d" % player.enemies_killed
+		kills_label.text = "Kills : %d" % player.enemies_killed
 
 func _update_passives_display() -> void:
 	if not is_instance_valid(player):
@@ -421,8 +446,7 @@ Tirs laser vert perçant"
 			"id": "dragonslayer",
 			"type": "weapon",
 			"title": "Dragonslayer (Guts)",
-			"desc": "★ AMÉLIORATION (Niv %d) ★
-+20%% Dégâts & Portée" % next_lvl
+			"desc": "★ AMÉLIORATION (Niv %d) ★\nLame colossale allongée & Arc géant" % next_lvl
 		})
 	# Si niveau max (>= 5) : NE PLUS PROPOSER !
 	
@@ -432,8 +456,7 @@ Tirs laser vert perçant"
 			"id": "boomerang",
 			"type": "weapon",
 			"title": "Boomerang Communiste",
-			"desc": "★ NOUVELLE ARME ★
-Faucille & marteau orbitaux"
+			"desc": "★ NOUVELLE ARME ★\nFaucille & marteau orbitaux"
 		})
 	elif player.weapon_boomerang.weapon_level < 5:
 		var next_lvl = player.weapon_boomerang.weapon_level + 1
@@ -441,8 +464,7 @@ Faucille & marteau orbitaux"
 			"id": "boomerang",
 			"type": "weapon",
 			"title": "Boomerang Communiste",
-			"desc": "★ AMÉLIORATION (Niv %d) ★
-+25%% Dégâts & Durée" % next_lvl
+			"desc": "★ AMÉLIORATION (Niv %d) ★\n+%d Boomerangs orbitaux simultanés" % [next_lvl, next_lvl]
 		})
 	# Si niveau max (>= 5) : NE PLUS PROPOSER !
 	
@@ -463,8 +485,7 @@ Dash instantané vitesse x3 (Espace)"
 			"id": "regen",
 			"type": "passive",
 			"title": "Régénération",
-			"desc": "★ NOUVEAU PASSIF ★
-Restaure +3.5 PV chaque seconde"
+			"desc": "★ NOUVEAU PASSIF ★\nRestaure +0.75 PV chaque seconde"
 		})
 	# Si déjà possédé : NE PLUS PROPOSER !
 	
@@ -495,10 +516,39 @@ Restaure +50 Points de Vie"
 	for item in selected_options:
 		var btn = Button.new()
 		btn.custom_minimum_size = Vector2(210, 115)
-		btn.text = "%s
-
-%s" % [item["title"], item["desc"]]
+		btn.text = "%s\n\n%s" % [item["title"], item["desc"]]
 		btn.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		
+		# Styles spooky scary gothiques pour les cartes d'amélioration
+		if ResourceLoader.exists("res://assets/sprites/ui/button_spooky_normal.png"):
+			var sn = StyleBoxTexture.new()
+			sn.texture = load("res://assets/sprites/ui/button_spooky_normal.png")
+			sn.texture_margin_left = 16.0
+			sn.texture_margin_top = 8.0
+			sn.texture_margin_right = 16.0
+			sn.texture_margin_bottom = 8.0
+			
+			var sh = StyleBoxTexture.new()
+			sh.texture = load("res://assets/sprites/ui/button_spooky_hover.png")
+			sh.texture_margin_left = 16.0
+			sh.texture_margin_top = 8.0
+			sh.texture_margin_right = 16.0
+			sh.texture_margin_bottom = 8.0
+			
+			var sp = StyleBoxTexture.new()
+			sp.texture = load("res://assets/sprites/ui/button_spooky_pressed.png")
+			sp.texture_margin_left = 16.0
+			sp.texture_margin_top = 8.0
+			sp.texture_margin_right = 16.0
+			sp.texture_margin_bottom = 8.0
+			
+			btn.add_theme_stylebox_override("normal", sn)
+			btn.add_theme_stylebox_override("hover", sh)
+			btn.add_theme_stylebox_override("focus", sh)
+			btn.add_theme_stylebox_override("pressed", sp)
+			btn.add_theme_color_override("font_hover_color", Color(1.0, 0.3, 0.3, 1))
+			btn.add_theme_color_override("font_focus_color", Color(1.0, 0.3, 0.3, 1))
+
 		btn.pressed.connect(func():
 			if is_instance_valid(player):
 				if item["type"] == "weapon":
@@ -512,6 +562,9 @@ Restaure +50 Points de Vie"
 		)
 		choices_container.add_child(btn)
 
+	if choices_container.get_child_count() > 0:
+		choices_container.get_child(0).grab_focus()
+
 func _on_upgrade_resolved() -> void:
 	if upgrade_queue.size() > 0:
 		var next_title = upgrade_queue.pop_front()
@@ -519,12 +572,70 @@ func _on_upgrade_resolved() -> void:
 	else:
 		levelup_modal.visible = false
 		get_tree().paused = false
+
 func _on_player_died() -> void:
 	is_game_over = true
+	get_tree().paused = true
 	var mins = int(game_time) / 60
 	var secs = int(game_time) % 60
-	final_stats_label.text = "Temps survécu : %02d:%02d\nEnnemis abattus : %d\nNiveau atteint : %d" % [mins, secs, player.enemies_killed, player.current_level]
+	final_stats_label.text = "⏱️ Temps survécu : %02d:%02d\n💀 Ennemis abattus : %d\n⚡ Niveau atteint : %d" % [mins, secs, player.enemies_killed, player.current_level]
 	game_over_screen.visible = true
+	btn_restart.grab_focus()
+
+func _unhandled_input(event: InputEvent) -> void:
+	if not is_inside_tree():
+		return
+		
+	# Gestion de la pause avec la touche 'M' ou Échap
+	var is_m_key = (event is InputEventKey and event.pressed and not event.echo and (event.keycode == KEY_M or event.physical_keycode == KEY_M or event.keycode == KEY_ESCAPE))
+	var is_action_pause = event.is_action_pressed("toggle_pause")
+	
+	if is_m_key or is_action_pause:
+		if is_game_over or levelup_modal.visible:
+			return
+		_toggle_pause()
+		_mark_input_as_handled()
+		return
+		
+	# Navigation au clavier dans le menu Pause
+	if pause_modal.visible:
+		if event.is_action_pressed("ui_up") or (event is InputEventKey and event.pressed and (event.keycode == KEY_UP or event.keycode == KEY_W or event.keycode == KEY_Z)):
+			btn_pause_resume.grab_focus()
+			_mark_input_as_handled()
+		elif event.is_action_pressed("ui_down") or (event is InputEventKey and event.pressed and (event.keycode == KEY_DOWN or event.keycode == KEY_S)):
+			btn_pause_menu.grab_focus()
+			_mark_input_as_handled()
+		return
+
+	# Navigation Game Over avec les flèches ou touches
+	if is_game_over:
+		if event.is_action_pressed("ui_up") or (event is InputEventKey and event.pressed and (event.keycode == KEY_UP or event.keycode == KEY_W or event.keycode == KEY_Z)):
+			btn_restart.grab_focus()
+			_mark_input_as_handled()
+		elif event.is_action_pressed("ui_down") or (event is InputEventKey and event.pressed and (event.keycode == KEY_DOWN or event.keycode == KEY_S)):
+			btn_menu.grab_focus()
+			_mark_input_as_handled()
+
+func _toggle_pause() -> void:
+	if pause_modal.visible:
+		_on_resume_pressed()
+	else:
+		_open_pause_modal()
+
+func _open_pause_modal() -> void:
+	pause_modal.visible = true
+	get_tree().paused = true
+	btn_pause_resume.grab_focus()
+
+func _on_resume_pressed() -> void:
+	pause_modal.visible = false
+	get_tree().paused = false
+
+func _mark_input_as_handled() -> void:
+	if is_inside_tree():
+		var vp = get_viewport()
+		if vp != null:
+			vp.set_input_as_handled()
 
 func _on_restart_pressed() -> void:
 	get_tree().paused = false
