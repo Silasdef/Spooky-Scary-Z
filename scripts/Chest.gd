@@ -5,14 +5,15 @@ class_name Chest
 # CHEMINS D'ACCÈS ASSETS
 # ==============================================================================
 const SPRITE_PATH: String = "res://assets/sprites/mystery_box.png"
-const AUDIO_JINGLE_PATH: String = "res://assets/audio/mystery_box_jingle.wav"
+const AUDIO_JINGLE_PATH: String = "res://assets/audio/cod_zombies_mystery_box.mp3"
+const AUDIO_FALLBACK_JINGLE_PATH: String = "res://assets/audio/mystery_box_jingle.wav"
 
 # ==============================================================================
 # ÉQUILIBRAGE JAM (Boîte Mystère Type Black Ops 2)
 # ==============================================================================
 @export_group("Equilibrage Coffre")
 @export var interaction_radius: float = 85.0     ## Distance d'activation du coffre
-@export var roll_duration: float = 1.2           ## Durée rapide du défilement des armes (jingle)
+@export var roll_duration: float = 2.2           ## Durée du défilement des armes (jingle BO)
 @export var respawn_cooldown: float = 20.0       ## Temps avant réapparition sur la carte
 
 var is_player_nearby: bool = false
@@ -52,8 +53,12 @@ func _ready() -> void:
 		sprite.texture = load(SPRITE_PATH)
 		sprite.scale = Vector2(0.12, 0.12)
 	
-	if ResourceLoader.exists(AUDIO_JINGLE_PATH):
-		audio_jingle.stream = load(AUDIO_JINGLE_PATH)
+	var jingle_path = AUDIO_JINGLE_PATH
+	if not ResourceLoader.exists(jingle_path) and ResourceLoader.exists(AUDIO_FALLBACK_JINGLE_PATH):
+		jingle_path = AUDIO_FALLBACK_JINGLE_PATH
+		
+	if ResourceLoader.exists(jingle_path):
+		audio_jingle.stream = load(jingle_path)
 		
 	queue_redraw()
 

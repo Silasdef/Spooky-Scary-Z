@@ -50,4 +50,6 @@ text = "Tirage..."
 horizontal_alignment = 1
 
 [node name="AudioStreamPlayer2D" type="AudioStreamPlayer2D" parent="."]
-max_distance = 2500.0
+process_mode = 3
+bus = &"SFX"
+max_distance = 3500.0
