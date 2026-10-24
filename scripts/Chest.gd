@@ -38,6 +38,7 @@ var roll_display_text: String = "???"
 @onready var roll_label: Label = $RollLabel
 @onready var audio_jingle: AudioStreamPlayer2D = $AudioStreamPlayer2D
 @onready var collision_shape: CollisionShape2D = $CollisionShape2D
+@onready var sprite: Sprite2D = $Sprite2D
 
 func _ready() -> void:
 	add_to_group("chests")
@@ -46,6 +47,10 @@ func _ready() -> void:
 	
 	prompt_label.visible = false
 	roll_label.visible = false
+	
+	if ResourceLoader.exists(SPRITE_PATH) and sprite != null:
+		sprite.texture = load(SPRITE_PATH)
+		sprite.scale = Vector2(0.12, 0.12)
 	
 	if ResourceLoader.exists(AUDIO_JINGLE_PATH):
 		audio_jingle.stream = load(AUDIO_JINGLE_PATH)
@@ -155,6 +160,20 @@ func _on_body_exited(body: Node2D) -> void:
 
 func _draw() -> void:
 	if not visible:
+		return
+		
+	# Si le sprite officiel est affiché
+	if sprite != null and sprite.texture != null:
+		if is_rolling:
+			var beam_height = 90.0
+			var beam_pts = PackedVector2Array([
+				Vector2(-20, 0),
+				Vector2(-35, -beam_height),
+				Vector2(35, -beam_height),
+				Vector2(20, 0)
+			])
+			draw_colored_polygon(beam_pts, Color(0.2, 0.6, 1.0, 0.35))
+			draw_circle(Vector2(0, -beam_height * 0.6), 18.0, Color(1.0, 0.85, 0.2, 0.8))
 		return
 		
 	# Dessin de la Boîte Mystère (caisse en bois renforcée de métal et point d'interrogation lumineux)

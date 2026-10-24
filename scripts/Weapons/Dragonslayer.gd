@@ -30,12 +30,21 @@ var enemies_hit_this_swing: Array[Node2D] = []
 
 @onready var sword_area: Area2D = $SwordArea
 @onready var sword_collision: CollisionShape2D = $SwordArea/CollisionShape2D
+@onready var sword_sprite: Sprite2D = $SwordArea/Sprite2D
 @onready var audio_player: AudioStreamPlayer2D = $AudioStreamPlayer2D
 
 func _ready() -> void:
 	sword_area.body_entered.connect(_on_target_entered)
 	sword_area.area_entered.connect(_on_target_entered)
 	sword_area.monitoring = false
+	
+	if sword_sprite != null:
+		var tex_path = "res://assets/sprites/dragonslayer_droite.png"
+		if ResourceLoader.exists(tex_path):
+			sword_sprite.texture = load(tex_path)
+		elif ResourceLoader.exists(SPRITE_PATH):
+			sword_sprite.texture = load(SPRITE_PATH)
+		sword_sprite.visible = false
 	
 	if ResourceLoader.exists(AUDIO_SWING_PATH):
 		audio_player.stream = load(AUDIO_SWING_PATH)
@@ -55,6 +64,8 @@ func _execute_upward_arc_swing() -> void:
 	is_swinging = true
 	enemies_hit_this_swing.clear()
 	sword_area.monitoring = true
+	if sword_sprite != null:
+		sword_sprite.visible = true
 	
 	alternate_left_right = !alternate_left_right
 	
@@ -94,6 +105,8 @@ func _execute_upward_arc_swing() -> void:
 		func():
 			is_swinging = false
 			sword_area.monitoring = false
+			if sword_sprite != null:
+				sword_sprite.visible = false
 			queue_redraw()
 	)
 
@@ -101,7 +114,6 @@ func _draw() -> void:
 	if not is_swinging:
 		return
 		
-	# Calcul géométrique de la lame Dragonslayer
 	var effective_length = sword_length
 	var effective_width = 18.0
 	
@@ -109,31 +121,33 @@ func _draw() -> void:
 		effective_length *= 1.3
 		effective_width *= 1.3
 	
+	# Arc de vent / tranchant stylisé
+	var arc_color = Color(1.0, 0.2, 0.2, 0.7) if has_regen_synergy else Color(0.9, 0.9, 1.0, 0.6)
+	draw_arc(Vector2.ZERO, effective_length * 0.95, current_sword_angle - 0.4, current_sword_angle + 0.4, 8, arc_color, 4.0)
+	
+	# Si le sprite officiel est affiché, on ne dessine pas la géométrie de remplacement
+	if sword_sprite != null and sword_sprite.texture != null:
+		return
+		
+	# Fallback procédural : lame géante noire/acier (esthétique Berserk)
 	var tip = Vector2.from_angle(current_sword_angle) * effective_length
 	var normal = Vector2(-sin(current_sword_angle), cos(current_sword_angle)) * (effective_width * 0.5)
 	
-	# Lame géante noire/acier (esthétique Berserk)
 	var blade_pts = PackedVector2Array([
 		Vector2.ZERO - normal,
 		tip - normal * 0.4,
-		tip + Vector2.from_angle(current_sword_angle) * 10.0, # Pointe
+		tip + Vector2.from_angle(current_sword_angle) * 10.0,
 		tip + normal * 0.4,
 		Vector2.ZERO + normal
 	])
 	
 	var blade_color = Color(0.2, 0.2, 0.25, 0.95)
 	if has_regen_synergy:
-		blade_color = Color(0.65, 0.1, 0.15, 0.95) # Teinte rouge sang avec la synergie
+		blade_color = Color(0.65, 0.1, 0.15, 0.95)
 		
 	draw_colored_polygon(blade_pts, blade_color)
-	
-	# Fil de la lame et reflets
 	draw_line(tip - normal * 0.4, tip + normal * 0.4, Color.LIGHT_GRAY, 3.0)
 	draw_line(Vector2.ZERO, tip, Color(0.85, 0.85, 0.9), 1.5)
-	
-	# Arc de vent / tranchant stylisé
-	var arc_color = Color(1.0, 0.2, 0.2, 0.7) if has_regen_synergy else Color(0.9, 0.9, 1.0, 0.6)
-	draw_arc(Vector2.ZERO, effective_length * 0.95, current_sword_angle - 0.4, current_sword_angle + 0.4, 8, arc_color, 4.0)
 
 func _on_target_entered(node: Node2D) -> void:
 	if not is_swinging:

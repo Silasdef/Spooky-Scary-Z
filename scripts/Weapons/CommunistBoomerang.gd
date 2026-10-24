@@ -30,12 +30,17 @@ var hit_cooldowns: Dictionary = {}
 
 @onready var hit_area: Area2D = $HitArea
 @onready var hit_shape: CollisionShape2D = $HitArea/CollisionShape2D
+@onready var sprite: Sprite2D = $HitArea/Sprite2D
 @onready var audio_player: AudioStreamPlayer2D = $AudioStreamPlayer2D
 
 func _ready() -> void:
 	hit_area.body_entered.connect(_on_enemy_hit)
 	hit_area.area_entered.connect(_on_enemy_hit)
 	
+	if ResourceLoader.exists(SPRITE_PATH) and sprite != null:
+		sprite.texture = load(SPRITE_PATH)
+		sprite.scale = Vector2(0.18, 0.18)
+		
 	if ResourceLoader.exists(AUDIO_WHOOSH_PATH):
 		audio_player.stream = load(AUDIO_WHOOSH_PATH)
 		
@@ -96,6 +101,8 @@ func _process(delta: float) -> void:
 	# Positionnement orbital relatif au joueur (noeud parent)
 	var offset = Vector2(cos(current_angle), sin(current_angle)) * current_orbit_radius
 	hit_area.position = offset
+	if sprite != null:
+		sprite.rotation = self_spin_angle
 	queue_redraw()
 
 func _draw() -> void:
@@ -103,14 +110,19 @@ func _draw() -> void:
 		return
 	
 	var center = hit_area.position
-	
-	# Dessin procédural : Faucille & Marteau stylisés (rouge et or révolutionnaire)
-	# Faucille courbée
 	var gold = Color(1.0, 0.85, 0.1)
 	var red = Color(0.9, 0.15, 0.15)
 	
 	# Anneau / traînée orbitale rougeoyante
 	draw_arc(Vector2.ZERO, current_orbit_radius, current_angle - 0.7, current_angle, 12, Color(0.9, 0.1, 0.1, 0.45), 2.5)
+	
+	# Si le sprite officiel est chargé, on ne dessine pas les formes procédurales
+	if sprite != null and sprite.texture != null:
+		if has_tayon_synergy:
+			var opp_center = -hit_area.position
+			draw_circle(opp_center, 6.0, Color(1.0, 0.85, 0.1))
+			draw_arc(opp_center, 12.0, -self_spin_angle, -self_spin_angle + 2.8, 10, Color(0.9, 0.15, 0.15), 3.0)
+		return
 	
 	# Faucille dorée
 	draw_arc(center, 12.0, self_spin_angle, self_spin_angle + 2.8, 10, gold, 3.5)
