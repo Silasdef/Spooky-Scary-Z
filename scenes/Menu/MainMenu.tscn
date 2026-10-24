@@ -311,4 +311,4 @@ theme_override_styles/focus = SubResource("StyleBoxTexture_spooky_hover")
 text = "RETOUR"
 
 [node name="MusicPlayer" type="AudioStreamPlayer" parent="."]
-bus = &"Master"
+bus = &"Music"

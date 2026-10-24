@@ -5,7 +5,8 @@ class_name MainMenu
 # CHEMINS D'ACCÈS ASSETS & CONFIG
 # ==============================================================================
 const MAP_SCENE_PATH: String = "res://scenes/Map/Map.tscn"
-const AUDIO_MENU_MUSIC_PATH: String = "res://assets/audio/menu_theme.wav"
+const AUDIO_MENU_MUSIC_PATH: String = "res://assets/audio/zombies_menu.mp3"
+const AUDIO_FALLBACK_MUSIC_PATH: String = "res://assets/audio/menu_theme.wav"
 const AUDIO_CLICK_PATH: String = "res://assets/audio/button_click.wav"
 const SETTINGS_FILE_PATH: String = "user://settings.cfg"
 const SAVE_GAME_PATH: String = "user://savegame.json"
@@ -73,8 +74,15 @@ func _ready() -> void:
 
 	_load_settings()
 
-	if ResourceLoader.exists(AUDIO_MENU_MUSIC_PATH):
-		music_player.stream = load(AUDIO_MENU_MUSIC_PATH)
+	var music_path = AUDIO_MENU_MUSIC_PATH
+	if not ResourceLoader.exists(music_path) and ResourceLoader.exists(AUDIO_FALLBACK_MUSIC_PATH):
+		music_path = AUDIO_FALLBACK_MUSIC_PATH
+
+	if ResourceLoader.exists(music_path):
+		var stream = load(music_path)
+		if stream is AudioStreamMP3:
+			stream.loop = true
+		music_player.stream = stream
 		music_player.play()
 
 	_update_button_layout()
