@@ -82,6 +82,7 @@ func _ready() -> void:
 	
 	if ResourceLoader.exists(SPRITE_PATH):
 		sprite.texture = load(SPRITE_PATH)
+		sprite.scale = Vector2(0.24, 0.24)
 	else:
 		queue_redraw()
 		
@@ -135,6 +136,7 @@ func _physics_process(delta: float) -> void:
 	if input_vec.length_squared() > 0.01:
 		facing_direction = input_vec.normalized()
 		velocity = input_vec * base_speed
+		_update_facing_sprite()
 	else:
 		velocity = velocity.move_toward(Vector2.ZERO, base_speed * 6.0 * delta)
 		
@@ -272,22 +274,35 @@ func acquire_passive(passive_id: String) -> void:
 			if weapon_boomerang != null:
 				weapon_boomerang.set_tayon_synergy(true)
 
-func _draw() -> void:
-	if sprite.texture != null:
-		return
+func _update_facing_sprite() -> void:
+	var dir_suffix = "bas"
+	if abs(facing_direction.x) > abs(facing_direction.y):
+		dir_suffix = "droite" if facing_direction.x > 0 else "gauche"
+	else:
+		dir_suffix = "bas" if facing_direction.y > 0 else "haut"
 		
-	# Fallback procédural : Survivant héroïque en vue du dessus
-	# Cercle de portée Tayon (détection XP) subtil
+	var path = "res://assets/sprites/player_%s.png" % dir_suffix
+	if ResourceLoader.exists(path):
+		var tex = load(path)
+		if sprite.texture != tex:
+			sprite.texture = tex
+
+func _draw() -> void:
+	# Effets visuels (Aura Tayon et traînée de Dash)
 	var radius = base_pickup_radius * (tayon_radius_multiplier if has_tayon else 1.0)
 	var tayon_color = Color(0.1, 0.8, 1.0, 0.08) if has_tayon else Color(1.0, 1.0, 1.0, 0.04)
 	draw_circle(Vector2.ZERO, radius, tayon_color)
 	draw_arc(Vector2.ZERO, radius, 0, TAU, 32, Color(tayon_color.r, tayon_color.g, tayon_color.b, 0.2), 1.0)
 	
-	# Traînée de dash si en train de dasher
 	if is_dashing:
 		draw_circle(-dash_direction * 18.0, 12.0, Color(0.2, 0.7, 1.0, 0.4))
 		draw_circle(-dash_direction * 32.0, 8.0, Color(0.2, 0.7, 1.0, 0.2))
 	
+	# Si le sprite officiel est chargé, on ne dessine pas le corps procédural
+	if sprite.texture != null:
+		return
+		
+	# Fallback procédural : Survivant héroïque en vue du dessus
 	# Épaules / Veste en cuir sombre
 	draw_rect(Rect2(-12, -8, 24, 16), Color(0.25, 0.2, 0.18))
 	# Tête

@@ -37,6 +37,7 @@ func _ready() -> void:
 		
 	if ResourceLoader.exists(SPRITE_PATH):
 		sprite.texture = load(SPRITE_PATH)
+		sprite.scale = Vector2(0.5, 0.5)
 	else:
 		queue_redraw()
 		
@@ -64,6 +65,22 @@ func _physics_process(delta: float) -> void:
 		
 	# Déplacement standard du boss vers le joueur
 	super._physics_process(delta)
+	_update_sprite_direction()
+
+func _update_sprite_direction() -> void:
+	if velocity.length_squared() < 1.0:
+		return
+	var dir_suffix = "bas"
+	if abs(velocity.x) > abs(velocity.y):
+		dir_suffix = "droite" if velocity.x > 0 else "gauche"
+	else:
+		dir_suffix = "bas" if velocity.y > 0 else "haut"
+		
+	var path = "res://assets/sprites/frankenstein_boss_%s.png" % dir_suffix
+	if ResourceLoader.exists(path):
+		var tex = load(path)
+		if sprite.texture != tex:
+			sprite.texture = tex
 
 func _cast_lightning_attack() -> void:
 	if not is_instance_valid(target_player) or lightning_scene == null:

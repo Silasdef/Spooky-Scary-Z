@@ -34,13 +34,35 @@ func _ready() -> void:
 		current_health = max_health
 		if ResourceLoader.exists(SPRITE_PUMPKIN_PATH):
 			sprite.texture = load(SPRITE_PUMPKIN_PATH)
+			sprite.scale = Vector2(0.22, 0.22)
 		else:
 			queue_redraw()
 	else:
 		if ResourceLoader.exists(SPRITE_BASIC_PATH):
 			sprite.texture = load(SPRITE_BASIC_PATH)
+			sprite.scale = Vector2(0.22, 0.22)
 		else:
 			queue_redraw()
+
+func _physics_process(delta: float) -> void:
+	super._physics_process(delta)
+	_update_sprite_direction()
+
+func _update_sprite_direction() -> void:
+	if velocity.length_squared() < 1.0:
+		return
+	var dir_suffix = "bas"
+	if abs(velocity.x) > abs(velocity.y):
+		dir_suffix = "droite" if velocity.x > 0 else "gauche"
+	else:
+		dir_suffix = "bas" if velocity.y > 0 else "haut"
+		
+	var prefix = "zombie_pumpkin" if is_pumpkin_head else "zombie_basic"
+	var path = "res://assets/sprites/%s_%s.png" % [prefix, dir_suffix]
+	if ResourceLoader.exists(path):
+		var tex = load(path)
+		if sprite.texture != tex:
+			sprite.texture = tex
 
 func _draw() -> void:
 	if sprite.texture != null:

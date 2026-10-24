@@ -26,17 +26,29 @@ func _ready() -> void:
 	
 	if ResourceLoader.exists(SPRITE_PATH):
 		sprite.texture = load(SPRITE_PATH)
+		sprite.scale = Vector2(0.22, 0.22)
 	else:
 		queue_redraw()
 
 func _physics_process(delta: float) -> void:
 	super._physics_process(delta)
-	
-	# Orientation du museau vers le joueur
-	if velocity.length() > 1.0:
-		rotation = velocity.angle()
-		running_wiggle += delta * 20.0
-		queue_redraw()
+	rotation = 0.0
+	_update_sprite_direction()
+
+func _update_sprite_direction() -> void:
+	if velocity.length_squared() < 1.0:
+		return
+	var dir_suffix = "bas"
+	if abs(velocity.x) > abs(velocity.y):
+		dir_suffix = "droite" if velocity.x > 0 else "gauche"
+	else:
+		dir_suffix = "bas" if velocity.y > 0 else "haut"
+		
+	var path = "res://assets/sprites/zombie_dog_%s.png" % dir_suffix
+	if ResourceLoader.exists(path):
+		var tex = load(path)
+		if sprite.texture != tex:
+			sprite.texture = tex
 
 func _draw() -> void:
 	if sprite.texture != null:
