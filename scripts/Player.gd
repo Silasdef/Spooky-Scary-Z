@@ -297,12 +297,7 @@ func _update_facing_sprite() -> void:
 			sprite.texture = tex
 
 func _draw() -> void:
-	# Effets visuels (Aura Tayon et traînée de Dash)
-	var radius = base_pickup_radius * (tayon_radius_multiplier if has_tayon else 1.0)
-	var tayon_color = Color(0.1, 0.8, 1.0, 0.08) if has_tayon else Color(1.0, 1.0, 1.0, 0.04)
-	draw_circle(Vector2.ZERO, radius, tayon_color)
-	draw_arc(Vector2.ZERO, radius, 0, TAU, 32, Color(tayon_color.r, tayon_color.g, tayon_color.b, 0.2), 1.0)
-	
+	# Traînée visuelle de Dash
 	if is_dashing:
 		draw_circle(-dash_direction * 18.0, 12.0, Color(0.2, 0.7, 1.0, 0.4))
 		draw_circle(-dash_direction * 32.0, 8.0, Color(0.2, 0.7, 1.0, 0.2))
