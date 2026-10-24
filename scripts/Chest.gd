@@ -12,7 +12,7 @@ const AUDIO_JINGLE_PATH: String = "res://assets/audio/mystery_box_jingle.wav"
 # ==============================================================================
 @export_group("Equilibrage Coffre")
 @export var interaction_radius: float = 85.0     ## Distance d'activation du coffre
-@export var roll_duration: float = 3.0           ## Durée du défilement des armes (jingle)
+@export var roll_duration: float = 1.2           ## Durée rapide du défilement des armes (jingle)
 @export var respawn_cooldown: float = 20.0       ## Temps avant réapparition sur la carte
 
 var is_player_nearby: bool = false
@@ -97,15 +97,16 @@ func _open_chest() -> void:
 
 func _complete_roll() -> void:
 	is_rolling = false
-	roll_label.text = "★ OBTENU : " + chosen_reward["name"] + " ★"
+	roll_label.text = "★ BOÎTE MYSTÈRE DÉVERROUILLÉE ! ★"
 	
-	# Attribution de la récompense au joueur
-	if is_instance_valid(target_player):
-		_give_reward_to_player(target_player, chosen_reward)
+	# Ouvre le panneau de bonus / amélioration (identique au passage de niveau)
+	var game_map = get_tree().get_first_node_in_group("game_map")
+	if game_map != null and game_map.has_method("request_upgrade"):
+		game_map.request_upgrade("★ COFFRE MYSTÈRE - CHOISISSEZ UN BONUS ★")
 		
 	# Disparition temporaire après ouverture
 	var tween = create_tween()
-	tween.tween_interval(1.5)
+	tween.tween_interval(1.0)
 	tween.tween_callback(func():
 		is_active = false
 		visible = false

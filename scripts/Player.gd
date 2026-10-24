@@ -21,7 +21,7 @@ const AUDIO_LEVELUP_PATH: String = "res://assets/audio/level_up.wav"
 # ÉQUILIBRAGE JAM (Joueur & Capacités)
 # ==============================================================================
 @export_group("Equilibrage Joueur")
-@export var base_speed: float = 210.0            ## Vitesse de marche normale (px/s)
+@export var base_speed: float = 140.0            ## Vitesse de marche ralentie (px/s)
 @export var max_health: float = 100.0           ## Points de vie max
 @export var base_pickup_radius: float = 90.0    ## Rayon d'aspiration d'XP de base
 
@@ -228,6 +228,12 @@ func _die() -> void:
 	set_physics_process(false)
 	set_process(false)
 
+const MAX_WEAPON_LEVEL: int = 5
+
+func heal(amount: float) -> void:
+	current_health = min(max_health, current_health + amount)
+	hp_changed.emit(current_health, max_health)
+
 func unlock_or_upgrade_weapon(weapon_id: String) -> void:
 	match weapon_id:
 		"laser_gun":
@@ -238,7 +244,8 @@ func unlock_or_upgrade_weapon(weapon_id: String) -> void:
 				if has_dash:
 					weapon_laser_gun.set_dash_synergy(true)
 			else:
-				weapon_laser_gun.upgrade()
+				if weapon_laser_gun.weapon_level < MAX_WEAPON_LEVEL:
+					weapon_laser_gun.upgrade()
 		"dragonslayer":
 			if weapon_dragonslayer == null:
 				var scene = load("res://scenes/Weapons/Dragonslayer.tscn") as PackedScene
@@ -247,7 +254,8 @@ func unlock_or_upgrade_weapon(weapon_id: String) -> void:
 				if has_regen:
 					weapon_dragonslayer.set_regen_synergy(true)
 			else:
-				weapon_dragonslayer.upgrade()
+				if weapon_dragonslayer.weapon_level < MAX_WEAPON_LEVEL:
+					weapon_dragonslayer.upgrade()
 		"boomerang":
 			if weapon_boomerang == null:
 				var scene = load("res://scenes/Weapons/CommunistBoomerang.tscn") as PackedScene
@@ -256,7 +264,8 @@ func unlock_or_upgrade_weapon(weapon_id: String) -> void:
 				if has_tayon:
 					weapon_boomerang.set_tayon_synergy(true)
 			else:
-				weapon_boomerang.upgrade()
+				if weapon_boomerang.weapon_level < MAX_WEAPON_LEVEL:
+					weapon_boomerang.upgrade()
 
 func acquire_passive(passive_id: String) -> void:
 	match passive_id:
