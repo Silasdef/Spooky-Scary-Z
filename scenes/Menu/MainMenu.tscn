@@ -1,6 +1,46 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene load_steps=9 format=3]
 
 [ext_resource type="Script" path="res://scripts/MainMenu.gd" id="1_menu"]
+[ext_resource type="Texture2D" path="res://assets/sprites/menu-spooky.png" id="2_bg"]
+[ext_resource type="Texture2D" path="res://assets/sprites/ui/button_spooky_normal.png" id="3_btn_norm"]
+[ext_resource type="Texture2D" path="res://assets/sprites/ui/button_spooky_hover.png" id="4_btn_hov"]
+[ext_resource type="Texture2D" path="res://assets/sprites/ui/button_spooky_pressed.png" id="5_btn_press"]
+[ext_resource type="Texture2D" path="res://assets/sprites/ui/spooky_skull_cursor.png" id="6_cursor"]
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_spooky_normal"]
+texture = ExtResource("3_btn_norm")
+texture_margin_left = 16.0
+texture_margin_top = 8.0
+texture_margin_right = 16.0
+texture_margin_bottom = 8.0
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_spooky_hover"]
+texture = ExtResource("4_btn_hov")
+texture_margin_left = 16.0
+texture_margin_top = 8.0
+texture_margin_right = 16.0
+texture_margin_bottom = 8.0
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_spooky_pressed"]
+texture = ExtResource("5_btn_press")
+texture_margin_left = 16.0
+texture_margin_top = 8.0
+texture_margin_right = 16.0
+texture_margin_bottom = 8.0
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_panel"]
+bg_color = Color(0.06, 0.05, 0.08, 0.96)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.85, 0.15, 0.15, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+shadow_color = Color(0, 0, 0, 0.85)
+shadow_size = 14
 
 [node name="MainMenu" type="Control"]
 layout_mode = 3
@@ -11,7 +51,142 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_menu")
 
-[node name="UIContainer" type="Control" parent="."]
+[node name="Background" type="TextureRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("2_bg")
+expand_mode = 1
+stretch_mode = 6
+
+[node name="ButtonsContainer" type="Control" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="ContinueButton" type="Button" parent="ButtonsContainer"]
+layout_mode = 0
+offset_left = 75.0
+offset_top = 408.0
+offset_right = 350.0
+offset_bottom = 452.0
+focus_neighbor_top = NodePath("../QuitButton")
+focus_neighbor_bottom = NodePath("../NewGameButton")
+theme_override_colors/font_color = Color(0.95, 0.9, 0.9, 1)
+theme_override_colors/font_hover_color = Color(1, 0.25, 0.25, 1)
+theme_override_colors/font_focus_color = Color(1, 0.25, 0.25, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 1)
+theme_override_constants/shadow_offset_x = 2
+theme_override_constants/shadow_offset_y = 2
+theme_override_font_sizes/font_size = 18
+theme_override_styles/normal = SubResource("StyleBoxTexture_spooky_normal")
+theme_override_styles/hover = SubResource("StyleBoxTexture_spooky_hover")
+theme_override_styles/pressed = SubResource("StyleBoxTexture_spooky_pressed")
+theme_override_styles/focus = SubResource("StyleBoxTexture_spooky_hover")
+text = "CONTINUER"
+
+[node name="NewGameButton" type="Button" parent="ButtonsContainer"]
+layout_mode = 0
+offset_left = 75.0
+offset_top = 456.0
+offset_right = 350.0
+offset_bottom = 500.0
+focus_neighbor_top = NodePath("../ContinueButton")
+focus_neighbor_bottom = NodePath("../SettingsButton")
+theme_override_colors/font_color = Color(0.95, 0.9, 0.9, 1)
+theme_override_colors/font_hover_color = Color(1, 0.25, 0.25, 1)
+theme_override_colors/font_focus_color = Color(1, 0.25, 0.25, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 1)
+theme_override_constants/shadow_offset_x = 2
+theme_override_constants/shadow_offset_y = 2
+theme_override_font_sizes/font_size = 18
+theme_override_styles/normal = SubResource("StyleBoxTexture_spooky_normal")
+theme_override_styles/hover = SubResource("StyleBoxTexture_spooky_hover")
+theme_override_styles/pressed = SubResource("StyleBoxTexture_spooky_pressed")
+theme_override_styles/focus = SubResource("StyleBoxTexture_spooky_hover")
+text = "NOUVELLE PARTIE"
+
+[node name="SettingsButton" type="Button" parent="ButtonsContainer"]
+layout_mode = 0
+offset_left = 75.0
+offset_top = 504.0
+offset_right = 350.0
+offset_bottom = 548.0
+focus_neighbor_top = NodePath("../NewGameButton")
+focus_neighbor_bottom = NodePath("../QuitButton")
+theme_override_colors/font_color = Color(0.95, 0.9, 0.9, 1)
+theme_override_colors/font_hover_color = Color(1, 0.25, 0.25, 1)
+theme_override_colors/font_focus_color = Color(1, 0.25, 0.25, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 1)
+theme_override_constants/shadow_offset_x = 2
+theme_override_constants/shadow_offset_y = 2
+theme_override_font_sizes/font_size = 18
+theme_override_styles/normal = SubResource("StyleBoxTexture_spooky_normal")
+theme_override_styles/hover = SubResource("StyleBoxTexture_spooky_hover")
+theme_override_styles/pressed = SubResource("StyleBoxTexture_spooky_pressed")
+theme_override_styles/focus = SubResource("StyleBoxTexture_spooky_hover")
+text = "PARAMÈTRES"
+
+[node name="QuitButton" type="Button" parent="ButtonsContainer"]
+layout_mode = 0
+offset_left = 75.0
+offset_top = 552.0
+offset_right = 350.0
+offset_bottom = 596.0
+focus_neighbor_top = NodePath("../SettingsButton")
+focus_neighbor_bottom = NodePath("../ContinueButton")
+theme_override_colors/font_color = Color(0.95, 0.9, 0.9, 1)
+theme_override_colors/font_hover_color = Color(1, 0.25, 0.25, 1)
+theme_override_colors/font_focus_color = Color(1, 0.25, 0.25, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 1)
+theme_override_constants/shadow_offset_x = 2
+theme_override_constants/shadow_offset_y = 2
+theme_override_font_sizes/font_size = 18
+theme_override_styles/normal = SubResource("StyleBoxTexture_spooky_normal")
+theme_override_styles/hover = SubResource("StyleBoxTexture_spooky_hover")
+theme_override_styles/pressed = SubResource("StyleBoxTexture_spooky_pressed")
+theme_override_styles/focus = SubResource("StyleBoxTexture_spooky_hover")
+text = "QUITTER"
+
+[node name="CursorContainer" type="HBoxContainer" parent="."]
+layout_mode = 0
+offset_left = 32.0
+offset_top = 414.0
+offset_right = 72.0
+offset_bottom = 448.0
+mouse_filter = 2
+theme_override_constants/separation = 2
+alignment = 2
+
+[node name="CursorSkull" type="TextureRect" parent="CursorContainer"]
+custom_minimum_size = Vector2(24, 24)
+layout_mode = 2
+size_flags_vertical = 4
+mouse_filter = 2
+texture = ExtResource("6_cursor")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="CursorLabel" type="Label" parent="CursorContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.2, 0.2, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 1)
+theme_override_constants/shadow_offset_x = 2
+theme_override_constants/shadow_offset_y = 2
+theme_override_font_sizes/font_size = 22
+text = ">"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="SettingsModal" type="CenterContainer" parent="."]
+visible = false
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -19,64 +194,121 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="TitleContainer" type="VBoxContainer" parent="UIContainer"]
-layout_mode = 1
-anchors_preset = 5
-anchor_left = 0.5
-anchor_right = 0.5
-offset_left = -250.0
-offset_top = 60.0
-offset_right = 250.0
-offset_bottom = 160.0
-grow_horizontal = 2
-theme_override_constants/separation = 8
-
-[node name="TitleLabel" type="Label" parent="UIContainer/TitleContainer"]
+[node name="DimOverlay" type="ColorRect" parent="SettingsModal"]
+custom_minimum_size = Vector2(1920, 1080)
 layout_mode = 2
-theme_override_colors/font_color = Color(0.9, 0.2, 0.2, 1)
-theme_override_colors/font_shadow_color = Color(0, 0, 0, 1)
-theme_override_constants/shadow_offset_x = 3
-theme_override_constants/shadow_offset_y = 3
-theme_override_font_sizes/font_size = 46
-text = "SPOOKY SCARY Z"
-horizontal_alignment = 1
+color = Color(0, 0, 0, 0.75)
 
-[node name="SubtitleLabel" type="Label" parent="UIContainer/TitleContainer"]
+[node name="Panel" type="PanelContainer" parent="SettingsModal"]
+custom_minimum_size = Vector2(480, 440)
 layout_mode = 2
-theme_override_colors/font_color = Color(0.7, 0.7, 0.75, 1)
-theme_override_font_sizes/font_size = 16
-text = "Survivez à l'Obscurité • Jam Prototype"
-horizontal_alignment = 1
+theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
 
-[node name="VBoxContainer" type="VBoxContainer" parent="UIContainer"]
-layout_mode = 1
-anchors_preset = 7
-anchor_left = 0.5
-anchor_top = 1.0
-anchor_right = 0.5
-anchor_bottom = 1.0
-offset_left = -140.0
-offset_top = -210.0
-offset_right = 140.0
-offset_bottom = -70.0
-grow_horizontal = 2
-grow_vertical = 0
+[node name="Margin" type="MarginContainer" parent="SettingsModal/Panel"]
+layout_mode = 2
+theme_override_constants/margin_left = 32
+theme_override_constants/margin_top = 26
+theme_override_constants/margin_right = 32
+theme_override_constants/margin_bottom = 26
+
+[node name="VBox" type="VBoxContainer" parent="SettingsModal/Panel/Margin"]
+layout_mode = 2
 theme_override_constants/separation = 16
 
-[node name="PlayButton" type="Button" parent="UIContainer/VBoxContainer"]
-custom_minimum_size = Vector2(0, 50)
+[node name="Title" type="Label" parent="SettingsModal/Panel/Margin/VBox"]
 layout_mode = 2
-theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_colors/font_hover_color = Color(0.2, 1, 0.4, 1)
-theme_override_font_sizes/font_size = 22
-text = "JOUER"
+theme_override_colors/font_color = Color(0.95, 0.2, 0.2, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 1)
+theme_override_constants/shadow_offset_x = 2
+theme_override_constants/shadow_offset_y = 2
+theme_override_font_sizes/font_size = 28
+text = "PARAMÈTRES"
+horizontal_alignment = 1
 
-[node name="QuitButton" type="Button" parent="UIContainer/VBoxContainer"]
-custom_minimum_size = Vector2(0, 46)
+[node name="HSeparator1" type="HSeparator" parent="SettingsModal/Panel/Margin/VBox"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.85, 0.85, 0.85, 1)
-theme_override_colors/font_hover_color = Color(1, 0.3, 0.3, 1)
+
+[node name="MasterVolRow" type="VBoxContainer" parent="SettingsModal/Panel/Margin/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="Header" type="HBoxContainer" parent="SettingsModal/Panel/Margin/VBox/MasterVolRow"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="SettingsModal/Panel/Margin/VBox/MasterVolRow/Header"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Volume Général"
+
+[node name="Value" type="Label" parent="SettingsModal/Panel/Margin/VBox/MasterVolRow/Header"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.8, 0.8, 0.8, 1)
+text = "100%"
+
+[node name="MasterSlider" type="HSlider" parent="SettingsModal/Panel/Margin/VBox/MasterVolRow"]
+layout_mode = 2
+value = 100.0
+
+[node name="MusicVolRow" type="VBoxContainer" parent="SettingsModal/Panel/Margin/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="Header" type="HBoxContainer" parent="SettingsModal/Panel/Margin/VBox/MusicVolRow"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="SettingsModal/Panel/Margin/VBox/MusicVolRow/Header"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Volume Musique"
+
+[node name="Value" type="Label" parent="SettingsModal/Panel/Margin/VBox/MusicVolRow/Header"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.8, 0.8, 0.8, 1)
+text = "80%"
+
+[node name="MusicSlider" type="HSlider" parent="SettingsModal/Panel/Margin/VBox/MusicVolRow"]
+layout_mode = 2
+value = 80.0
+
+[node name="SFXVolRow" type="VBoxContainer" parent="SettingsModal/Panel/Margin/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="Header" type="HBoxContainer" parent="SettingsModal/Panel/Margin/VBox/SFXVolRow"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="SettingsModal/Panel/Margin/VBox/SFXVolRow/Header"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Volume Effets Sonores (SFX)"
+
+[node name="Value" type="Label" parent="SettingsModal/Panel/Margin/VBox/SFXVolRow/Header"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.8, 0.8, 0.8, 1)
+text = "100%"
+
+[node name="SFXSlider" type="HSlider" parent="SettingsModal/Panel/Margin/VBox/SFXVolRow"]
+layout_mode = 2
+value = 100.0
+
+[node name="FullscreenCheck" type="CheckBox" parent="SettingsModal/Panel/Margin/VBox"]
+layout_mode = 2
+text = "Mode Plein Écran (Fullscreen)"
+
+[node name="HSeparator2" type="HSeparator" parent="SettingsModal/Panel/Margin/VBox"]
+layout_mode = 2
+
+[node name="CloseSettingsButton" type="Button" parent="SettingsModal/Panel/Margin/VBox"]
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.95, 0.95, 0.95, 1)
+theme_override_colors/font_hover_color = Color(1, 0.25, 0.25, 1)
 theme_override_font_sizes/font_size = 18
-text = "QUITTER"
+theme_override_styles/normal = SubResource("StyleBoxTexture_spooky_normal")
+theme_override_styles/hover = SubResource("StyleBoxTexture_spooky_hover")
+theme_override_styles/pressed = SubResource("StyleBoxTexture_spooky_pressed")
+theme_override_styles/focus = SubResource("StyleBoxTexture_spooky_hover")
+text = "RETOUR"
 
 [node name="MusicPlayer" type="AudioStreamPlayer" parent="."]
+bus = &"Master"
