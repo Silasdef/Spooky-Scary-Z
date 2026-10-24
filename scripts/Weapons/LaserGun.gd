@@ -9,12 +9,13 @@ const AUDIO_FIRE_PATH: String = "res://assets/audio/laser_shot.wav"
 const PROJECTILE_SCENE_PATH: String = "res://scenes/Weapons/LaserProjectile.tscn"
 
 # ==============================================================================
-# ÉQUILIBRAGE JAM (Pistolet Laser Type BO2)
+# ÉQUILIBRAGE JAM (Pistolet Laser Type BO2 - Nerfé)
 # ==============================================================================
 @export_group("Equilibrage Pistolet Laser")
-@export var base_damage: float = 35.0          ## Dégâts de base par tir laser
-@export var fire_interval: float = 0.55        ## Intervalle de tir en secondes (cadence)
-@export var detection_range: float = 480.0     ## Portée de détection de l'ennemi le plus proche
+@export var base_damage: float = 14.0          ## Dégâts de base réduits (nerf)
+@export var fire_interval: float = 1.15        ## Délai augmenté entre chaque tir (cadence ralentie)
+@export var projectile_speed: float = 380.0    ## Vitesse ralentie du projectile laser (px/s)
+@export var detection_range: float = 450.0     ## Portée de détection de l'ennemi le plus proche
 @export var weapon_level: int = 1              ## Niveau d'amélioration de l'arme
 
 # Synergie passive
@@ -32,6 +33,8 @@ func _ready() -> void:
 	
 	if ResourceLoader.exists(SPRITE_PATH):
 		sprite.texture = load(SPRITE_PATH)
+		sprite.scale = Vector2(0.12, 0.12)
+		sprite.offset = Vector2(80, 0)
 	else:
 		queue_redraw()
 		
@@ -84,18 +87,19 @@ func _fire_laser_at(target: Node2D) -> void:
 	
 	var dir = (target.global_position - global_position).normalized()
 	rotation = dir.angle()
+	sprite.flip_v = (dir.x < 0)
 	
 	var proj = projectile_scene.instantiate() as LaserProjectile
 	get_tree().current_scene.add_child(proj)
 	
-	var dmg_mult = 1.0 + (weapon_level - 1) * 0.25
+	var dmg_mult = (base_damage / 14.0) * (1.0 + (weapon_level - 1) * 0.25)
 	var extra_pierce = 0
 	
 	if has_dash_synergy:
 		dmg_mult *= 1.35
 		extra_pierce = 2
 		
-	proj.setup(global_position + dir * 16.0, dir, dmg_mult, extra_pierce)
+	proj.setup(global_position + dir * 16.0, dir, dmg_mult, extra_pierce, projectile_speed, base_damage)
 	
 	if audio_player.stream != null:
 		audio_player.play()

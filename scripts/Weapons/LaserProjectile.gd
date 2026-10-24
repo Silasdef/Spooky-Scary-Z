@@ -8,13 +8,13 @@ const SPRITE_PATH: String = "res://assets/sprites/laser_projectile.png"
 const AUDIO_IMPACT_PATH: String = "res://assets/audio/laser_hit.wav"
 
 # ==============================================================================
-# ÉQUILIBRAGE JAM (Projectile Laser BO2)
+# ÉQUILIBRAGE JAM (Projectile Laser BO2 - Nerfé)
 # ==============================================================================
 @export_group("Equilibrage Laser")
-@export var speed: float = 850.0             ## Vitesse du projectile laser (px/s)
-@export var damage: float = 35.0             ## Dégâts infligés aux ennemis
+@export var speed: float = 380.0             ## Vitesse ralentie du projectile laser (px/s)
+@export var damage: float = 14.0             ## Dégâts réduits infligés aux ennemis (nerf)
 @export var pierce_count: int = 1            ## Nombre d'ennemis traversés avant disparition
-@export var lifetime: float = 2.0            ## Durée de vie maximale en secondes
+@export var lifetime: float = 2.5            ## Durée de vie maximale en secondes
 
 # La couleur verte est explicitement exigée pour le feeling Ray Gun BO2
 @export var laser_color: Color = Color(0.1, 1.0, 0.2, 1.0) ## Vert néon Ray Gun
@@ -34,6 +34,7 @@ func _ready() -> void:
 	
 	if ResourceLoader.exists(SPRITE_PATH):
 		sprite.texture = load(SPRITE_PATH)
+		sprite.scale = Vector2(1.0, 1.0)
 	else:
 		queue_redraw()
 
@@ -56,10 +57,15 @@ func _physics_process(delta: float) -> void:
 	global_position += direction * speed * delta
 	rotation = direction.angle()
 
-func setup(start_pos: Vector2, target_dir: Vector2, dmg_multiplier: float = 1.0, extra_pierce: int = 0) -> void:
+func setup(start_pos: Vector2, target_dir: Vector2, dmg_multiplier: float = 1.0, extra_pierce: int = 0, custom_speed: float = -1.0, custom_dmg: float = -1.0) -> void:
 	global_position = start_pos
 	direction = target_dir.normalized()
-	damage *= dmg_multiplier
+	if custom_speed > 0.0:
+		speed = custom_speed
+	if custom_dmg > 0.0:
+		damage = custom_dmg * dmg_multiplier
+	else:
+		damage *= dmg_multiplier
 	pierce_count += extra_pierce
 	rotation = direction.angle()
 
