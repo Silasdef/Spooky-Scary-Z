@@ -12,7 +12,7 @@ const LIGHTNING_SCENE_PATH: String = "res://scenes/Enemies/LightningStrike.tscn"
 # ÉQUILIBRAGE JAM (Boss Frankenstein)
 # ==============================================================================
 @export_group("Equilibrage Boss Frankenstein")
-@export var boss_health: float = 550.0          ## Points de vie colossaux (Très tanky)
+@export var boss_health: float = 2200.0         ## Points de vie colossaux (Très tanky, combat de boss épique)
 @export var boss_speed: float = 40.0            ## Déplacement lourd et lent
 @export var boss_contact_damage: float = 25.0   ## Dégâts de contact dévastateurs
 @export var lightning_cooldown: float = 4.5     ## Intervalle d'invocation des éclairs (sec)
@@ -25,10 +25,18 @@ var lightning_scene: PackedScene = null
 
 @onready var audio_roar: AudioStreamPlayer2D = $AudioStreamPlayer2D
 
+func _init() -> void:
+	max_health = boss_health
+	current_health = boss_health
+	move_speed = boss_speed
+	contact_damage = boss_contact_damage
+	contact_radius = 48.0
+
 func _ready() -> void:
 	max_health = boss_health
 	move_speed = boss_speed
 	contact_damage = boss_contact_damage
+	contact_radius = 48.0
 	
 	super._ready()
 	
@@ -95,7 +103,9 @@ func _cast_lightning_attack() -> void:
 	# Invoque un éclair directement sur la position courante du joueur (ou légèrement anticipée)
 	var strike = lightning_scene.instantiate() as Node2D
 	strike.global_position = target_player.global_position
-	get_tree().current_scene.add_child(strike)
+	var scene_target = get_tree().current_scene if (get_tree() != null and get_tree().current_scene != null) else (get_tree().root if get_tree() != null else null)
+	if scene_target != null:
+		scene_target.add_child(strike)
 
 func _draw() -> void:
 	if sprite.texture != null:

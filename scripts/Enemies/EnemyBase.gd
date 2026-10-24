@@ -11,13 +11,14 @@ const AUDIO_HURT_PATH: String = "res://assets/audio/enemy_hurt.wav"
 # ÉQUILIBRAGE JAM (Paramètres de base surchargeables par chaque type)
 # ==============================================================================
 @export_group("Equilibrage Ennemi Base")
-@export var max_health: float = 30.0            ## Points de vie maximum
+@export var max_health: float = 40.0            ## Points de vie maximum
 @export var move_speed: float = 70.0            ## Vitesse de marche vers le joueur
 @export var contact_damage: float = 10.0        ## Dégâts infligés au joueur par contact
+@export var contact_radius: float = 28.0        ## Distance de frappe au contact (pas de collision physique bloquante)
 @export var attack_cooldown: float = 0.8        ## Fréquence des coups au corps à corps
 @export var xp_drop_chance: float = 1.0         ## Chance de drop d'une gemme d'XP (1.0 = 100%)
 
-var current_health: float = 30.0
+var current_health: float = 40.0
 var knockback_velocity: Vector2 = Vector2.ZERO
 var target_player: CharacterBody2D = null
 var attack_timer: float = 0.0
@@ -52,16 +53,13 @@ func _physics_process(delta: float) -> void:
 		
 	move_and_slide()
 	
-	# Gestion des dégâts de contact avec le joueur
+	# Gestion des dégâts de contact avec le joueur (sans bloquer le joueur physiquement)
 	attack_timer += delta
-	if attack_timer >= attack_cooldown:
-		for i in range(get_slide_collision_count()):
-			var collision = get_slide_collision(i)
-			var collider = collision.get_collider()
-			if collider != null and collider.is_in_group("player") and collider.has_method("take_damage"):
-				collider.take_damage(contact_damage)
-				attack_timer = 0.0
-				break
+	if attack_timer >= attack_cooldown and is_instance_valid(target_player):
+		var dist_sq = global_position.distance_squared_to(target_player.global_position)
+		if dist_sq <= contact_radius * contact_radius:
+			target_player.take_damage(contact_damage)
+			attack_timer = 0.0
 				
 	# Flash blanc/rouge de prise de dégâts
 	if flash_timer > 0.0:
@@ -87,7 +85,9 @@ func _die() -> void:
 		if gem_scene != null:
 			var gem = gem_scene.instantiate() as Node2D
 			gem.global_position = global_position
-			get_tree().current_scene.call_deferred("add_child", gem)
+			var scene_target = get_tree().current_scene if (get_tree() != null and get_tree().current_scene != null) else (get_tree().root if get_tree() != null else null)
+			if scene_target != null:
+				scene_target.call_deferred("add_child", gem)
 			
 	# Notifier le joueur ou le GameManager du kill
 	if is_instance_valid(target_player) and target_player.has_method("register_kill"):
