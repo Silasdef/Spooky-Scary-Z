@@ -18,9 +18,8 @@ const SAVE_GAME_PATH: String = "user://savegame.json"
 @onready var new_game_button: Button = $ButtonsContainer/NewGameButton
 @onready var settings_button: Button = $ButtonsContainer/SettingsButton
 @onready var quit_button: Button = $ButtonsContainer/QuitButton
-@onready var cursor_container: HBoxContainer = $CursorContainer
+@onready var cursor_container: Control = $CursorContainer
 @onready var cursor_skull: TextureRect = $CursorContainer/CursorSkull
-@onready var cursor_label: Label = $CursorContainer/CursorLabel
 @onready var music_player: AudioStreamPlayer = $MusicPlayer
 
 # Modal Paramètres
@@ -89,8 +88,28 @@ func _ready() -> void:
 	if get_viewport() != null:
 		get_viewport().size_changed.connect(_update_button_layout)
 
-	_set_selected_button(0, false)
-	continue_button.grab_focus()
+	_check_save_status()
+
+func _check_save_status() -> void:
+	var has_save = FileAccess.file_exists(SAVE_GAME_PATH)
+	if has_save:
+		var file = FileAccess.open(SAVE_GAME_PATH, FileAccess.READ)
+		var lvl = 1
+		if file != null:
+			var json = JSON.new()
+			if json.parse(file.get_as_text()) == OK and json.data is Dictionary:
+				var pdata = json.data.get("player", {})
+				lvl = int(pdata.get("current_level", 1))
+			file.close()
+		continue_button.text = "CONTINUER (NIV %d)" % lvl
+		continue_button.modulate = Color.WHITE
+		_set_selected_button(0, false)
+		continue_button.grab_focus()
+	else:
+		continue_button.text = "CONTINUER"
+		continue_button.modulate = Color(0.65, 0.65, 0.65, 0.65)
+		_set_selected_button(1, false)
+		new_game_button.grab_focus()
 
 func _update_button_layout() -> void:
 	if not is_inside_tree():
@@ -149,10 +168,10 @@ func _mark_input_as_handled() -> void:
 func _process(delta: float) -> void:
 	time_elapsed += delta
 	
-	# Interpolation fluide du curseur (crâne + flèche) vers le bouton sélectionné
+	# Interpolation fluide du réticule crâne vers le bouton sélectionné
 	cursor_container.position.y = lerp(cursor_container.position.y, target_cursor_y, 18.0 * delta)
 	
-	# Effet de pulsation lumineuse des yeux du crâne et du curseur
+	# Effet de pulsation lumineuse des yeux du crâne
 	var pulse = 0.8 + 0.25 * sin(time_elapsed * 6.5)
 	cursor_container.modulate = Color(1.0, pulse * 0.45, pulse * 0.45, 1.0)
 	

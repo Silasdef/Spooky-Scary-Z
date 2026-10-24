@@ -322,3 +322,83 @@ func _draw() -> void:
 	# Indicateur de visée / lampe torche dans la direction
 	var pointer = facing_direction * 16.0
 	draw_line(Vector2.ZERO, pointer, Color(1.0, 0.9, 0.5, 0.8), 2.5)
+
+# ==============================================================================
+# SAUVEGARDE & CHARGEMENT
+# ==============================================================================
+func get_save_data() -> Dictionary:
+	var laser_lvl = weapon_laser_gun.weapon_level if weapon_laser_gun != null else 0
+	var ds_lvl = weapon_dragonslayer.weapon_level if weapon_dragonslayer != null else 0
+	var boom_lvl = weapon_boomerang.weapon_level if weapon_boomerang != null else 0
+	
+	return {
+		"current_health": current_health,
+		"max_health": max_health,
+		"current_xp": current_xp,
+		"current_level": current_level,
+		"xp_required": xp_required,
+		"enemies_killed": enemies_killed,
+		"has_dash": has_dash,
+		"has_regen": has_regen,
+		"has_tayon": has_tayon,
+		"pos_x": global_position.x,
+		"pos_y": global_position.y,
+		"weapons": {
+			"laser_gun": laser_lvl,
+			"dragonslayer": ds_lvl,
+			"boomerang": boom_lvl
+		}
+	}
+
+func load_save_data(data: Dictionary) -> void:
+	current_health = data.get("current_health", current_health)
+	max_health = data.get("max_health", max_health)
+	current_xp = data.get("current_xp", current_xp)
+	current_level = data.get("current_level", current_level)
+	xp_required = data.get("xp_required", xp_required)
+	enemies_killed = data.get("enemies_killed", enemies_killed)
+	
+	has_dash = data.get("has_dash", false)
+	has_regen = data.get("has_regen", false)
+	has_tayon = data.get("has_tayon", false)
+	_update_pickup_radius()
+	
+	if data.has("pos_x") and data.has("pos_y"):
+		global_position = Vector2(data["pos_x"], data["pos_y"])
+		
+	var weapons_data = data.get("weapons", {})
+	
+	# Laser Gun
+	var laser_target_lvl = weapons_data.get("laser_gun", 1)
+	if laser_target_lvl > 0:
+		if weapon_laser_gun == null:
+			unlock_or_upgrade_weapon("laser_gun")
+		while weapon_laser_gun != null and weapon_laser_gun.weapon_level < laser_target_lvl:
+			weapon_laser_gun.upgrade()
+			
+	# Dragonslayer
+	var ds_target_lvl = weapons_data.get("dragonslayer", 0)
+	if ds_target_lvl > 0:
+		if weapon_dragonslayer == null:
+			unlock_or_upgrade_weapon("dragonslayer")
+		while weapon_dragonslayer != null and weapon_dragonslayer.weapon_level < ds_target_lvl:
+			weapon_dragonslayer.upgrade()
+			
+	# Boomerang
+	var boom_target_lvl = weapons_data.get("boomerang", 0)
+	if boom_target_lvl > 0:
+		if weapon_boomerang == null:
+			unlock_or_upgrade_weapon("boomerang")
+		while weapon_boomerang != null and weapon_boomerang.weapon_level < boom_target_lvl:
+			weapon_boomerang.upgrade()
+			
+	# Synergies passives
+	if has_dash and weapon_laser_gun != null:
+		weapon_laser_gun.set_dash_synergy(true)
+	if has_regen and weapon_dragonslayer != null:
+		weapon_dragonslayer.set_regen_synergy(true)
+	if has_tayon and weapon_boomerang != null:
+		weapon_boomerang.set_tayon_synergy(true)
+		
+	hp_changed.emit(current_health, max_health)
+	xp_changed.emit(current_xp, xp_required, current_level)

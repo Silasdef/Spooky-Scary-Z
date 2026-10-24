@@ -6,6 +6,7 @@ class_name GameMap
 # ==============================================================================
 const AUDIO_GAME_START_PATH: String = "res://assets/audio/lemodezombie.mp3"
 const AUDIO_GAME_BGM_PATH: String = "res://assets/audio/game_theme.wav"
+const SAVE_GAME_PATH: String = "user://savegame.json"
 const MAP_TEXTURE_PATH: String = "res://assets/sprites/map_apocalyptic_city_full.png"
 const MAP_TEXTURE_FALLBACK: String = "res://assets/sprites/map_apocalyptic_city_seamless.png"
 const ZOMBIE_BASIC_SCENE_PATH: String = "res://scenes/Enemies/ZombieBasic.tscn"
@@ -23,6 +24,7 @@ const CHEST_SCENE_PATH: String = "res://scenes/Chest/Chest.tscn"
 @export var boss_spawn_interval: float = 75.0   ## Fréquence d'apparition du Boss Frankenstein
 
 var game_time: float = 0.0
+var auto_save_timer: float = 0.0
 var spawn_timer: float = 0.0
 var last_boss_time: float = 0.0
 var is_game_over: bool = false
@@ -110,6 +112,14 @@ func _ready() -> void:
 			background.region_enabled = true
 			background.region_rect = Rect2(0, 0, arena_size, arena_size)
 		
+	# Chargement d'une partie existante si poursuivie via Continuer
+	var loaded = load_game()
+	if not loaded and is_instance_valid(player):
+		player.hp_changed.emit(player.current_health, player.max_health)
+		player.xp_changed.emit(player.current_xp, player.xp_required, player.current_level)
+		_update_hud_timer_and_kills()
+		_update_passives_display()
+
 	queue_redraw()
 
 func _preload_scenes() -> void:
@@ -182,6 +192,12 @@ func _process(delta: float) -> void:
 		_spawn_boss()
 		last_boss_time = game_time
 		
+	# Sauvegarde automatique périodique toutes les 15 secondes
+	auto_save_timer += delta
+	if auto_save_timer >= 15.0:
+		auto_save_timer = 0.0
+		save_game()
+
 	queue_redraw()
 
 func _calculate_spawn_interval() -> float:
@@ -589,12 +605,20 @@ func _on_upgrade_resolved() -> void:
 
 func _on_player_died() -> void:
 	is_game_over = true
+	# Supprime la sauvegarde en cas de défaite pour ne pas pouvoir continuer une partie perdue
+	if FileAccess.file_exists(SAVE_GAME_PATH):
+		DirAccess.remove_absolute(SAVE_GAME_PATH)
 	get_tree().paused = true
 	var mins = int(game_time) / 60
 	var secs = int(game_time) % 60
 	final_stats_label.text = "⏱️ Temps survécu : %02d:%02d\n💀 Ennemis abattus : %d\n⚡ Niveau atteint : %d" % [mins, secs, player.enemies_killed, player.current_level]
 	game_over_screen.visible = true
 	btn_restart.grab_focus()
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_WM_CLOSE_REQUEST:
+		if not is_game_over:
+			save_game()
 
 func _unhandled_input(event: InputEvent) -> void:
 	if not is_inside_tree():
@@ -652,9 +676,52 @@ func _mark_input_as_handled() -> void:
 			vp.set_input_as_handled()
 
 func _on_restart_pressed() -> void:
+	if FileAccess.file_exists(SAVE_GAME_PATH):
+		DirAccess.remove_absolute(SAVE_GAME_PATH)
 	get_tree().paused = false
 	get_tree().reload_current_scene()
 
 func _on_menu_pressed() -> void:
+	if not is_game_over:
+		save_game()
 	get_tree().paused = false
 	get_tree().change_scene_to_file("res://scenes/Menu/MainMenu.tscn")
+
+# ==============================================================================
+# SYSTÈME DE SAUVEGARDE & CHARGEMENT
+# ==============================================================================
+func save_game() -> void:
+	if not is_instance_valid(player) or is_game_over:
+		return
+	var save_dict = {
+		"version": 1,
+		"game_time": game_time,
+		"player": player.get_save_data()
+	}
+	var file = FileAccess.open(SAVE_GAME_PATH, FileAccess.WRITE)
+	if file != null:
+		file.store_string(JSON.stringify(save_dict, "\t"))
+		file.close()
+
+func load_game() -> bool:
+	if not FileAccess.file_exists(SAVE_GAME_PATH):
+		return false
+	var file = FileAccess.open(SAVE_GAME_PATH, FileAccess.READ)
+	if file == null:
+		return false
+	var content = file.get_as_text()
+	file.close()
+	
+	var json = JSON.new()
+	var err = json.parse(content)
+	if err != OK or not (json.data is Dictionary):
+		return false
+		
+	var data: Dictionary = json.data
+	game_time = float(data.get("game_time", 0.0))
+	if data.has("player") and is_instance_valid(player):
+		player.load_save_data(data["player"])
+		
+	_update_hud_timer_and_kills()
+	_update_passives_display()
+	return true
