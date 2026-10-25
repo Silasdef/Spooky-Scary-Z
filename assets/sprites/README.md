@@ -17,10 +17,7 @@ Pour chaque entité / item, les 4 directions sont disponibles en français et en
 
 | Catégorie | Fichiers de Base | Suffixes Directionnels Disponibles | Fichiers Compatibilité Code | Description |
 |---|---|---|---|---|
-| **Survivant (Générique)** | `survivor.png`, `player.png` | `_bas`, `_haut`, `_gauche`, `_droite` (+ `_down`, `_up`, `_left`, `_right`) | `player.png` | Survivant jouable (260x260, centré) |
-| **Survivant Joel** | `joel.png` | `_bas`, `_haut`, `_gauche`, `_droite` | `joel.png` | Joel (TLOU) jouable (260x260, 4 directions authentiques) |
-| **Survivante Ellie** | `ellie.png` | `_bas`, `_haut`, `_gauche`, `_droite` | `ellie.png` | Ellie (TLOU) jouable (260x260, 4 directions authentiques) |
-| **Boss Le Colosse** | `colosse_boss.png` | `_bas`, `_haut`, `_gauche`, `_droite`, `_attack` | `colosse_boss.png` | Bloater colossal (boule de spores & nuage toxique) |
+| **Survivant** | `survivor.png`, `player.png` | `_bas`, `_haut`, `_gauche`, `_droite` (+ `_down`, `_up`, `_left`, `_right`) | `player.png` | Survivant jouable (260x260, centré) |
 | **Zombie Basique** | `zombie.png`, `zombie_basic.png` | `_bas`, `_haut`, `_gauche`, `_droite` (+ `_down`, `_up`, `_left`, `_right`) | `zombie_basic.png` | Zombie standard vert (256x290) |
 | **Zombie Citrouille** | `zombie_citrouille.png`, `zombie_pumpkin.png` | `_bas`, `_haut`, `_gauche`, `_droite` (+ `_down`, `_up`, `_left`, `_right`) | `zombie_pumpkin.png` | Variante tête de citrouille (250x250) |
 | **Chien Zombie** | `zombie_dog.png`, `zombie_chien.png` | `_bas`, `_haut`, `_gauche`, `_droite` (+ `_down`, `_up`, `_left`, `_right`) | `zombie_dog.png` | Chien zombie rapide (280x245) |
