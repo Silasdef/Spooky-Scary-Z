@@ -223,22 +223,22 @@ expand_mode = 1
 stretch_mode = 5
 
 [node name="CharacterSelectPanel" type="PanelContainer" parent="."]
-offset_left = 500.0
-offset_top = 530.0
-offset_right = 920.0
-offset_bottom = 770.0
+offset_left = 75.0
+offset_top = 188.0
+offset_right = 425.0
+offset_bottom = 392.0
 theme_override_styles/panel = SubResource("StyleBoxFlat_char_panel")
 
 [node name="Margin" type="MarginContainer" parent="CharacterSelectPanel"]
 layout_mode = 2
-theme_override_constants/margin_left = 16
-theme_override_constants/margin_top = 10
-theme_override_constants/margin_right = 16
-theme_override_constants/margin_bottom = 12
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 8
 
 [node name="VBox" type="VBoxContainer" parent="CharacterSelectPanel/Margin"]
 layout_mode = 2
-theme_override_constants/separation = 8
+theme_override_constants/separation = 6
 
 [node name="Title" type="Label" parent="CharacterSelectPanel/Margin/VBox"]
 layout_mode = 2
@@ -246,18 +246,18 @@ theme_override_colors/font_color = Color(1, 0.3, 0.3, 1)
 theme_override_colors/font_shadow_color = Color(0, 0, 0, 1)
 theme_override_constants/shadow_offset_x = 2
 theme_override_constants/shadow_offset_y = 2
-theme_override_font_sizes/font_size = 16
+theme_override_font_sizes/font_size = 15
 text = "CHOIX DU SURVIVANT"
 horizontal_alignment = 1
 
 [node name="CardsRow" type="HBoxContainer" parent="CharacterSelectPanel/Margin/VBox"]
 layout_mode = 2
 size_flags_vertical = 3
-theme_override_constants/separation = 14
+theme_override_constants/separation = 10
 alignment = 1
 
 [node name="JoelButton" type="Button" parent="CharacterSelectPanel/Margin/VBox/CardsRow"]
-custom_minimum_size = Vector2(170, 160)
+custom_minimum_size = Vector2(150, 140)
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_styles/normal = SubResource("StyleBoxFlat_char_card")
@@ -276,7 +276,7 @@ theme_override_constants/separation = 4
 alignment = 1
 
 [node name="Portrait" type="TextureRect" parent="CharacterSelectPanel/Margin/VBox/CardsRow/JoelButton/VBox"]
-custom_minimum_size = Vector2(70, 95)
+custom_minimum_size = Vector2(60, 75)
 layout_mode = 2
 size_flags_horizontal = 4
 mouse_filter = 2
@@ -290,19 +290,19 @@ theme_override_colors/font_color = Color(1, 0.95, 0.9, 1)
 theme_override_colors/font_shadow_color = Color(0, 0, 0, 1)
 theme_override_constants/shadow_offset_x = 1
 theme_override_constants/shadow_offset_y = 1
-theme_override_font_sizes/font_size = 16
+theme_override_font_sizes/font_size = 14
 text = "JOEL"
 horizontal_alignment = 1
 
 [node name="StatusLabel" type="Label" parent="CharacterSelectPanel/Margin/VBox/CardsRow/JoelButton/VBox"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.3, 1, 0.3, 1)
-theme_override_font_sizes/font_size = 12
+theme_override_font_sizes/font_size = 11
 text = "✓ SÉLECTIONNÉ"
 horizontal_alignment = 1
 
 [node name="EllieButton" type="Button" parent="CharacterSelectPanel/Margin/VBox/CardsRow"]
-custom_minimum_size = Vector2(170, 160)
+custom_minimum_size = Vector2(150, 140)
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_styles/normal = SubResource("StyleBoxFlat_char_card")
@@ -321,7 +321,7 @@ theme_override_constants/separation = 4
 alignment = 1
 
 [node name="Portrait" type="TextureRect" parent="CharacterSelectPanel/Margin/VBox/CardsRow/EllieButton/VBox"]
-custom_minimum_size = Vector2(70, 95)
+custom_minimum_size = Vector2(60, 75)
 layout_mode = 2
 size_flags_horizontal = 4
 mouse_filter = 2
@@ -335,14 +335,14 @@ theme_override_colors/font_color = Color(1, 0.95, 0.9, 1)
 theme_override_colors/font_shadow_color = Color(0, 0, 0, 1)
 theme_override_constants/shadow_offset_x = 1
 theme_override_constants/shadow_offset_y = 1
-theme_override_font_sizes/font_size = 16
+theme_override_font_sizes/font_size = 14
 text = "ELLIE"
 horizontal_alignment = 1
 
 [node name="StatusLabel" type="Label" parent="CharacterSelectPanel/Margin/VBox/CardsRow/EllieButton/VBox"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.8, 0.8, 0.8, 1)
-theme_override_font_sizes/font_size = 12
+theme_override_font_sizes/font_size = 11
 text = "CHOISIR"
 horizontal_alignment = 1
 

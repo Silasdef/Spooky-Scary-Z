@@ -60,14 +60,29 @@ func _ready() -> void:
 		btn.focus_entered.connect(_on_button_focused.bind(i))
 
 	# Configuration explicite des voisins de focus pour navigation circulaire clavier/gamepad
-	continue_button.focus_neighbor_top = quit_button.get_path()
+	if joel_button != null and ellie_button != null:
+		continue_button.focus_neighbor_top = joel_button.get_path()
+		quit_button.focus_neighbor_bottom = joel_button.get_path()
+		
+		joel_button.focus_neighbor_top = quit_button.get_path()
+		joel_button.focus_neighbor_bottom = continue_button.get_path()
+		joel_button.focus_neighbor_right = ellie_button.get_path()
+		joel_button.focus_neighbor_left = ellie_button.get_path()
+		
+		ellie_button.focus_neighbor_top = quit_button.get_path()
+		ellie_button.focus_neighbor_bottom = continue_button.get_path()
+		ellie_button.focus_neighbor_left = joel_button.get_path()
+		ellie_button.focus_neighbor_right = joel_button.get_path()
+	else:
+		continue_button.focus_neighbor_top = quit_button.get_path()
+		quit_button.focus_neighbor_bottom = continue_button.get_path()
+
 	continue_button.focus_neighbor_bottom = new_game_button.get_path()
 	new_game_button.focus_neighbor_top = continue_button.get_path()
 	new_game_button.focus_neighbor_bottom = settings_button.get_path()
 	settings_button.focus_neighbor_top = new_game_button.get_path()
 	settings_button.focus_neighbor_bottom = quit_button.get_path()
 	quit_button.focus_neighbor_top = settings_button.get_path()
-	quit_button.focus_neighbor_bottom = continue_button.get_path()
 
 	# Connexions du modal Paramètres
 	if music_slider != null:
@@ -146,12 +161,14 @@ func _update_button_layout() -> void:
 		target_cursor_y = sel_btn.position.y + (sel_btn.size.y - cursor_container.size.y) * 0.5
 		cursor_container.position.x = sel_btn.position.x - cursor_container.size.x - 8.0
 
-	# Repositionnement réactif du sélecteur de personnage
+	# Repositionnement réactif du sélecteur de personnage au-dessus du bouton CONTINUER
 	if character_select_panel != null:
-		var panel_x = btn_x + btn_w + 35.0 * scale_x
-		var panel_y = 535.0 * scale_y
-		var panel_w = 420.0 * (vp_size.x / 1920.0)
-		var panel_h = 235.0 * (vp_size.y / 1080.0)
+		var panel_w = 350.0 * (vp_size.x / 1920.0)
+		var panel_h = 195.0 * (vp_size.y / 1080.0)
+		var panel_x = btn_x + (btn_w - panel_w) * 0.5
+		var continue_top = continue_button.position.y if continue_button != null else (y_centers[0] * scale_y - btn_h * 0.5)
+		var spacing = 16.0 * scale_y
+		var panel_y = continue_top - panel_h - spacing
 		character_select_panel.position = Vector2(panel_x, panel_y)
 		character_select_panel.size = Vector2(panel_w, panel_h)
 
