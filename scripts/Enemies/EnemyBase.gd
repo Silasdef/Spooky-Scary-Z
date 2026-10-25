@@ -17,6 +17,7 @@ const AUDIO_HURT_PATH: String = "res://assets/audio/enemy_hurt.wav"
 @export var contact_radius: float = 28.0        ## Distance de frappe au contact (pas de collision physique bloquante)
 @export var attack_cooldown: float = 0.8        ## Fréquence des coups au corps à corps
 @export var xp_drop_chance: float = 0.5         ## Chance de drop d'une gemme d'XP (0.5 = 50%, 1 chance sur 2)
+@export var knockback_resistance: float = 0.0   ## Résistance au recul (0.0 = vulnérable, 1.0 = inamovible)
 
 var current_health: float = 40.0
 var knockback_velocity: Vector2 = Vector2.ZERO
@@ -33,6 +34,8 @@ func _ready() -> void:
 	_find_player()
 
 func _find_player() -> void:
+	if not is_inside_tree() or get_tree() == null:
+		return
 	var players = get_tree().get_nodes_in_group("player")
 	if players.size() > 0:
 		target_player = players[0] as CharacterBody2D
@@ -76,7 +79,7 @@ func take_damage(amount: float) -> void:
 		_die()
 
 func apply_knockback(force: Vector2) -> void:
-	knockback_velocity = force
+	knockback_velocity = force * max(0.0, 1.0 - knockback_resistance)
 
 func _die() -> void:
 	# Spawn de la gemme de loot XP

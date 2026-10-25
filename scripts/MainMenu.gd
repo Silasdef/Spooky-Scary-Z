@@ -10,6 +10,7 @@ const AUDIO_FALLBACK_MUSIC_PATH: String = "res://assets/audio/menu_theme.wav"
 const AUDIO_CLICK_PATH: String = "res://assets/audio/button_click.wav"
 const SETTINGS_FILE_PATH: String = "user://settings.cfg"
 const SAVE_GAME_PATH: String = "user://savegame.json"
+const CHARACTER_CONFIG_PATH: String = "user://selected_character.cfg"
 
 # ==============================================================================
 # RÉFÉRENCES NOEUDS
@@ -22,15 +23,19 @@ const SAVE_GAME_PATH: String = "user://savegame.json"
 @onready var cursor_skull: TextureRect = $CursorContainer/CursorSkull
 @onready var music_player: AudioStreamPlayer = $MusicPlayer
 
+# Sélecteur de personnage (The Last of Us : Joel ou Ellie)
+@onready var character_select_panel: PanelContainer = $CharacterSelectPanel if has_node("CharacterSelectPanel") else null
+@onready var joel_button: Button = $CharacterSelectPanel/Margin/VBox/CardsRow/JoelButton if has_node("CharacterSelectPanel/Margin/VBox/CardsRow/JoelButton") else null
+@onready var ellie_button: Button = $CharacterSelectPanel/Margin/VBox/CardsRow/EllieButton if has_node("CharacterSelectPanel/Margin/VBox/CardsRow/EllieButton") else null
+@onready var joel_status_label: Label = $CharacterSelectPanel/Margin/VBox/CardsRow/JoelButton/VBox/StatusLabel if has_node("CharacterSelectPanel/Margin/VBox/CardsRow/JoelButton/VBox/StatusLabel") else null
+@onready var ellie_status_label: Label = $CharacterSelectPanel/Margin/VBox/CardsRow/EllieButton/VBox/StatusLabel if has_node("CharacterSelectPanel/Margin/VBox/CardsRow/EllieButton/VBox/StatusLabel") else null
+
+var selected_character: String = "joel"
+
 # Modal Paramètres
 @onready var settings_modal: CenterContainer = $SettingsModal
-@onready var master_slider: HSlider = $SettingsModal/Panel/Margin/VBox/MasterVolRow/MasterSlider
-@onready var master_value_label: Label = $SettingsModal/Panel/Margin/VBox/MasterVolRow/Header/Value
 @onready var music_slider: HSlider = $SettingsModal/Panel/Margin/VBox/MusicVolRow/MusicSlider
 @onready var music_value_label: Label = $SettingsModal/Panel/Margin/VBox/MusicVolRow/Header/Value
-@onready var sfx_slider: HSlider = $SettingsModal/Panel/Margin/VBox/SFXVolRow/SFXSlider
-@onready var sfx_value_label: Label = $SettingsModal/Panel/Margin/VBox/SFXVolRow/Header/Value
-@onready var fullscreen_check: CheckBox = $SettingsModal/Panel/Margin/VBox/FullscreenCheck
 @onready var close_settings_button: Button = $SettingsModal/Panel/Margin/VBox/CloseSettingsButton
 
 # État de navigation
@@ -65,13 +70,20 @@ func _ready() -> void:
 	quit_button.focus_neighbor_bottom = continue_button.get_path()
 
 	# Connexions du modal Paramètres
-	master_slider.value_changed.connect(_on_master_volume_changed)
-	music_slider.value_changed.connect(_on_music_volume_changed)
-	sfx_slider.value_changed.connect(_on_sfx_volume_changed)
-	fullscreen_check.toggled.connect(_on_fullscreen_toggled)
-	close_settings_button.pressed.connect(_on_close_settings_pressed)
+	if music_slider != null:
+		music_slider.value_changed.connect(_on_music_volume_changed)
+	if close_settings_button != null:
+		close_settings_button.pressed.connect(_on_close_settings_pressed)
 
 	_load_settings()
+
+	# Initialisation de la sélection du survivant (Joel ou Ellie)
+	selected_character = _load_saved_character()
+	if joel_button != null:
+		joel_button.pressed.connect(_on_joel_selected)
+	if ellie_button != null:
+		ellie_button.pressed.connect(_on_ellie_selected)
+	_update_character_ui()
 
 	var music_path = AUDIO_MENU_MUSIC_PATH
 	if not ResourceLoader.exists(music_path) and ResourceLoader.exists(AUDIO_FALLBACK_MUSIC_PATH):
@@ -133,6 +145,15 @@ func _update_button_layout() -> void:
 		var sel_btn = buttons[selected_button_index]
 		target_cursor_y = sel_btn.position.y + (sel_btn.size.y - cursor_container.size.y) * 0.5
 		cursor_container.position.x = sel_btn.position.x - cursor_container.size.x - 8.0
+
+	# Repositionnement réactif du sélecteur de personnage
+	if character_select_panel != null:
+		var panel_x = btn_x + btn_w + 35.0 * scale_x
+		var panel_y = 535.0 * scale_y
+		var panel_w = 420.0 * (vp_size.x / 1920.0)
+		var panel_h = 235.0 * (vp_size.y / 1080.0)
+		character_select_panel.position = Vector2(panel_x, panel_y)
+		character_select_panel.size = Vector2(panel_w, panel_h)
 
 func _unhandled_input(event: InputEvent) -> void:
 	if not is_inside_tree():
@@ -213,13 +234,55 @@ func _play_click_sound() -> void:
 # ==============================================================================
 func _on_continue_pressed() -> void:
 	_play_click_sound()
+	Player.save_character_selection(selected_character)
 	get_tree().change_scene_to_file(MAP_SCENE_PATH)
 
 func _on_new_game_pressed() -> void:
 	_play_click_sound()
+	Player.save_character_selection(selected_character)
 	if FileAccess.file_exists(SAVE_GAME_PATH):
 		DirAccess.remove_absolute(SAVE_GAME_PATH)
 	get_tree().change_scene_to_file(MAP_SCENE_PATH)
+
+func _on_joel_selected() -> void:
+	_select_character("joel")
+
+func _on_ellie_selected() -> void:
+	_select_character("ellie")
+
+func _select_character(char_name: String) -> void:
+	_play_click_sound()
+	selected_character = char_name
+	Player.save_character_selection(char_name)
+	_update_character_ui()
+
+func _update_character_ui() -> void:
+	if joel_status_label == null or ellie_status_label == null:
+		return
+	if selected_character == "joel":
+		joel_status_label.text = "✓ SÉLECTIONNÉ"
+		joel_status_label.modulate = Color(0.3, 1.0, 0.3, 1.0)
+		if joel_button != null:
+			joel_button.modulate = Color(1.15, 1.15, 1.15, 1.0)
+		ellie_status_label.text = "CHOISIR"
+		ellie_status_label.modulate = Color(0.7, 0.7, 0.7, 0.8)
+		if ellie_button != null:
+			ellie_button.modulate = Color(0.75, 0.75, 0.75, 0.85)
+	else:
+		ellie_status_label.text = "✓ SÉLECTIONNÉ"
+		ellie_status_label.modulate = Color(0.3, 1.0, 0.3, 1.0)
+		if ellie_button != null:
+			ellie_button.modulate = Color(1.15, 1.15, 1.15, 1.0)
+		joel_status_label.text = "CHOISIR"
+		joel_status_label.modulate = Color(0.7, 0.7, 0.7, 0.8)
+		if joel_button != null:
+			joel_button.modulate = Color(0.75, 0.75, 0.75, 0.85)
+
+func _load_saved_character() -> String:
+	var cfg = ConfigFile.new()
+	if cfg.load(CHARACTER_CONFIG_PATH) == OK:
+		return cfg.get_value("game", "selected_character", "joel")
+	return "joel"
 
 func _on_settings_pressed() -> void:
 	_play_click_sound()
@@ -243,23 +306,10 @@ func _on_close_settings_pressed() -> void:
 	if is_inside_tree() and settings_button.is_inside_tree():
 		settings_button.grab_focus()
 
-func _on_master_volume_changed(value: float) -> void:
-	master_value_label.text = "%d%%" % int(value)
-	_apply_audio_volume("Master", value)
-
 func _on_music_volume_changed(value: float) -> void:
-	music_value_label.text = "%d%%" % int(value)
+	if music_value_label != null:
+		music_value_label.text = "%d%%" % int(value)
 	_apply_audio_volume("Music", value)
-
-func _on_sfx_volume_changed(value: float) -> void:
-	sfx_value_label.text = "%d%%" % int(value)
-	_apply_audio_volume("SFX", value)
-
-func _on_fullscreen_toggled(toggled_on: bool) -> void:
-	if toggled_on:
-		DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN)
-	else:
-		DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED)
 
 func _apply_audio_volume(bus_name: String, percentage: float) -> void:
 	var bus_idx = AudioServer.get_bus_index(bus_name)
@@ -275,37 +325,20 @@ func _load_settings() -> void:
 	var config = ConfigFile.new()
 	var err = config.load(SETTINGS_FILE_PATH)
 	
-	var master_vol = 100.0
 	var music_vol = 80.0
-	var sfx_vol = 100.0
-	var is_fullscreen = false
 	
 	if err == OK:
-		master_vol = config.get_value("audio", "master_volume", 100.0)
 		music_vol = config.get_value("audio", "music_volume", 80.0)
-		sfx_vol = config.get_value("audio", "sfx_volume", 100.0)
-		is_fullscreen = config.get_value("display", "fullscreen", false)
 
-	master_slider.value = master_vol
-	music_slider.value = music_vol
-	sfx_slider.value = sfx_vol
-	fullscreen_check.button_pressed = is_fullscreen
+	if music_slider != null:
+		music_slider.value = music_vol
+	if music_value_label != null:
+		music_value_label.text = "%d%%" % int(music_vol)
 	
-	master_value_label.text = "%d%%" % int(master_vol)
-	music_value_label.text = "%d%%" % int(music_vol)
-	sfx_value_label.text = "%d%%" % int(sfx_vol)
-	
-	_apply_audio_volume("Master", master_vol)
 	_apply_audio_volume("Music", music_vol)
-	_apply_audio_volume("SFX", sfx_vol)
-	
-	if is_fullscreen:
-		DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN)
 
 func _save_settings() -> void:
 	var config = ConfigFile.new()
-	config.set_value("audio", "master_volume", master_slider.value)
-	config.set_value("audio", "music_volume", music_slider.value)
-	config.set_value("audio", "sfx_volume", sfx_slider.value)
-	config.set_value("display", "fullscreen", fullscreen_check.button_pressed)
+	if music_slider != null:
+		config.set_value("audio", "music_volume", music_slider.value)
 	config.save(SETTINGS_FILE_PATH)

@@ -12,6 +12,7 @@ const MAP_TEXTURE_FALLBACK: String = "res://assets/sprites/map_apocalyptic_city_
 const ZOMBIE_BASIC_SCENE_PATH: String = "res://scenes/Enemies/ZombieBasic.tscn"
 const ZOMBIE_DOG_SCENE_PATH: String = "res://scenes/Enemies/ZombieDog.tscn"
 const FRANKENSTEIN_SCENE_PATH: String = "res://scenes/Enemies/FrankensteinBoss.tscn"
+const COLOSSE_SCENE_PATH: String = "res://scenes/Enemies/ColosseBoss.tscn"
 const CHEST_SCENE_PATH: String = "res://scenes/Chest/Chest.tscn"
 
 # ==============================================================================
@@ -21,14 +22,16 @@ const CHEST_SCENE_PATH: String = "res://scenes/Chest/Chest.tscn"
 @export var arena_size: float = 3600.0           ## Taille totale de l'arène carrée (px)
 @export var max_enemies: int = 450              ## Limite maximale d'ennemis simultanés sur la carte
 @export var dog_spawn_time: float = 30.0        ## Temps de survie avant apparition des Chiens Zombies dans les hordes
-@export var boss_spawn_interval: float = 75.0   ## Fréquence d'apparition du Boss Frankenstein
+@export var boss_spawn_interval: float = 75.0   ## Fréquence d'apparition des Boss (Frankenstein & Colosse)
 
 var game_time: float = 0.0
 var auto_save_timer: float = 0.0
 var spawn_timer: float = 0.0
 var last_boss_time: float = 0.0
+var boss_spawn_count: int = 0
 var is_game_over: bool = false
-var upgrade_queue: Array[String] = []
+var upgrade_queue: Array[Dictionary] = []
+var current_upgrade_callback: Callable = Callable()
 var active_chest_music_count: int = 0
 var was_bgm_paused_by_menu: bool = false
 
@@ -36,6 +39,7 @@ var was_bgm_paused_by_menu: bool = false
 var scene_zombie_basic: PackedScene = null
 var scene_zombie_dog: PackedScene = null
 var scene_frankenstein: PackedScene = null
+var scene_colosse: PackedScene = null
 var scene_chest: PackedScene = null
 
 @onready var background: Sprite2D = $Background if has_node("Background") else null
@@ -67,6 +71,15 @@ var scene_chest: PackedScene = null
 
 func _ready() -> void:
 	add_to_group("game_map")
+	process_mode = Node.PROCESS_MODE_ALWAYS
+	if is_instance_valid(player):
+		player.process_mode = Node.PROCESS_MODE_PAUSABLE
+	if arena_walls != null:
+		arena_walls.process_mode = Node.PROCESS_MODE_PAUSABLE
+	if chests_container != null:
+		chests_container.process_mode = Node.PROCESS_MODE_PAUSABLE
+	if enemies_container != null:
+		enemies_container.process_mode = Node.PROCESS_MODE_PAUSABLE
 	if bgm_player != null:
 		bgm_player.process_mode = Node.PROCESS_MODE_ALWAYS
 	_preload_scenes()
@@ -134,6 +147,8 @@ func _preload_scenes() -> void:
 		scene_zombie_dog = load(ZOMBIE_DOG_SCENE_PATH)
 	if ResourceLoader.exists(FRANKENSTEIN_SCENE_PATH):
 		scene_frankenstein = load(FRANKENSTEIN_SCENE_PATH)
+	if ResourceLoader.exists(COLOSSE_SCENE_PATH):
+		scene_colosse = load(COLOSSE_SCENE_PATH)
 	if ResourceLoader.exists(CHEST_SCENE_PATH):
 		scene_chest = load(CHEST_SCENE_PATH)
 
@@ -179,7 +194,7 @@ func _spawn_initial_chests() -> void:
 		chests_container.add_child(chest)
 
 func _process(delta: float) -> void:
-	if is_game_over:
+	if is_game_over or get_tree().paused:
 		return
 		
 	# Attend bien que la musique de l'ouverture du coffre soit complètement finie pour relancer la musique
@@ -295,11 +310,23 @@ func _spawn_enemy_instance_at(spawn_pos: Vector2) -> void:
 		enemies_container.add_child(enemy_instance)
 
 func _spawn_boss() -> void:
-	if scene_frankenstein == null or not is_instance_valid(player):
+	if not is_instance_valid(player):
 		return
+		
+	boss_spawn_count += 1
+	var boss_scene: PackedScene = scene_frankenstein
+	if scene_colosse != null:
+		# Alterne l'apparition entre Le Colosse et Frankenstein
+		boss_scene = scene_colosse if (boss_spawn_count % 2 == 0) else scene_frankenstein
+		if boss_scene == null:
+			boss_scene = scene_colosse if scene_frankenstein == null else scene_frankenstein
+			
+	if boss_scene == null:
+		return
+		
 	var spawn_ang = randf() * TAU
 	var spawn_pos = player.global_position + Vector2.from_angle(spawn_ang) * 800.0
-	var boss = scene_frankenstein.instantiate() as Node2D
+	var boss = boss_scene.instantiate() as Node2D
 	boss.global_position = spawn_pos
 	enemies_container.add_child(boss)
 
@@ -405,7 +432,7 @@ func _update_passives_display() -> void:
 		
 	status += "• Bottes de Dash : %s\n" % ("ACTIF MAX" if player.has_dash else "Inactif")
 	status += "• Régénération : %s\n" % ("ACTIF MAX" if player.has_regen else "Inactif")
-	status += "• Aimant Tayon : %s\n" % ("ACTIF MAX" if player.has_tayon else "Inactif")
+	status += "• Aimant : %s\n" % ("ACTIF MAX" if player.has_tayon else "Inactif")
 	passives_label.text = status
 
 func _on_player_hp_changed(curr: float, mx: float) -> void:
@@ -421,16 +448,17 @@ func _on_player_xp_changed(curr: int, req: int, lvl: int) -> void:
 func _on_player_level_up(lvl: int) -> void:
 	request_upgrade("★ MONTÉE DE NIVEAU %d ★" % lvl)
 
-func request_upgrade(modal_title: String) -> void:
+func request_upgrade(modal_title: String, callback: Callable = Callable()) -> void:
 	if levelup_modal.visible:
-		upgrade_queue.append(modal_title)
+		upgrade_queue.append({"title": modal_title, "callback": callback})
 	else:
-		_show_upgrade_modal_direct(modal_title)
+		_show_upgrade_modal_direct(modal_title, callback)
 
-func _show_upgrade_modal_direct(modal_title: String) -> void:
+func _show_upgrade_modal_direct(modal_title: String, callback: Callable = Callable()) -> void:
 	if not is_instance_valid(player):
 		return
 		
+	current_upgrade_callback = callback
 	get_tree().paused = true
 	levelup_modal.visible = true
 	
@@ -449,6 +477,7 @@ func _show_upgrade_modal_direct(modal_title: String) -> void:
 		pool.append({
 			"id": "laser_gun",
 			"type": "weapon",
+			"icon": "res://assets/sprites/laser_gun.png",
 			"title": "Pistolet Laser",
 			"desc": "★ NOUVELLE ARME ★\nTirs laser vert perçant"
 		})
@@ -457,6 +486,7 @@ func _show_upgrade_modal_direct(modal_title: String) -> void:
 		pool.append({
 			"id": "laser_gun",
 			"type": "weapon",
+			"icon": "res://assets/sprites/laser_gun.png",
 			"title": "Pistolet Laser",
 			"desc": "★ AMÉLIORATION Niv %d ★\n+25%% Dégâts & Cadence" % next_lvl
 		})
@@ -467,6 +497,7 @@ func _show_upgrade_modal_direct(modal_title: String) -> void:
 		pool.append({
 			"id": "dragonslayer",
 			"type": "weapon",
+			"icon": "res://assets/sprites/dragonslayer_droite.png",
 			"title": "Dragonslayer",
 			"desc": "★ NOUVELLE ARME ★\nÉpée colossale balayant en arc"
 		})
@@ -475,6 +506,7 @@ func _show_upgrade_modal_direct(modal_title: String) -> void:
 		pool.append({
 			"id": "dragonslayer",
 			"type": "weapon",
+			"icon": "res://assets/sprites/dragonslayer_droite.png",
 			"title": "Dragonslayer",
 			"desc": "★ AMÉLIORATION Niv %d ★\nLame colossale allongée & Arc géant" % next_lvl
 		})
@@ -485,6 +517,7 @@ func _show_upgrade_modal_direct(modal_title: String) -> void:
 		pool.append({
 			"id": "boomerang",
 			"type": "weapon",
+			"icon": "res://assets/sprites/sickle_hammer.png",
 			"title": "Boomerang Communiste",
 			"desc": "★ NOUVELLE ARME ★\nFaucille & marteau orbitaux"
 		})
@@ -493,6 +526,7 @@ func _show_upgrade_modal_direct(modal_title: String) -> void:
 		pool.append({
 			"id": "boomerang",
 			"type": "weapon",
+			"icon": "res://assets/sprites/sickle_hammer.png",
 			"title": "Boomerang Communiste",
 			"desc": "★ AMÉLIORATION Niv %d ★\n+%d Boomerangs orbitaux simultanés" % [next_lvl, next_lvl]
 		})
@@ -503,6 +537,7 @@ func _show_upgrade_modal_direct(modal_title: String) -> void:
 		pool.append({
 			"id": "dash",
 			"type": "passive",
+			"icon": "res://assets/sprites/dash_boots.png",
 			"title": "Bottes de Dash",
 			"desc": "★ NOUVEAU PASSIF ★\nDash instantané vitesse x3 - Espace"
 		})
@@ -513,17 +548,19 @@ func _show_upgrade_modal_direct(modal_title: String) -> void:
 		pool.append({
 			"id": "regen",
 			"type": "passive",
+			"icon": "res://assets/sprites/regen.png",
 			"title": "Régénération",
 			"desc": "★ NOUVEAU PASSIF ★\nRestaure +0.75 PV chaque seconde"
 		})
 	# Si déjà possédé : NE PLUS PROPOSER !
 	
-	# 6. Aimant Tayon
+	# 6. Aimant
 	if not player.has_tayon:
 		pool.append({
 			"id": "tayon",
 			"type": "passive",
-			"title": "Aimant Tayon",
+			"icon": "res://assets/sprites/tayon.png",
+			"title": "Aimant",
 			"desc": "★ NOUVEAU PASSIF ★\nRayon d'aspiration d'XP accru +160%"
 		})
 	# Si déjà possédé : NE PLUS PROPOSER !
@@ -533,9 +570,9 @@ func _show_upgrade_modal_direct(modal_title: String) -> void:
 		pool.append({
 			"id": "heal",
 			"type": "heal",
+			"icon": "res://assets/sprites/regen.png",
 			"title": "Soin d'Urgence",
-			"desc": "★ BONUS DE SANTÉ ★
-Restaure +50 Points de Vie"
+			"desc": "★ BONUS DE SANTÉ ★\nRestaure +50 Points de Vie"
 		})
 		
 	pool.shuffle()
@@ -543,9 +580,40 @@ Restaure +50 Points de Vie"
 	
 	for item in selected_options:
 		var btn = Button.new()
-		btn.custom_minimum_size = Vector2(210, 115)
-		btn.text = "%s\n\n%s" % [item["title"], item["desc"]]
-		btn.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		btn.custom_minimum_size = Vector2(210, 130)
+		btn.clip_contents = true
+		
+		# Conteneur intérieur structuré pour icône + titre + description
+		var vbox = VBoxContainer.new()
+		vbox.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		vbox.alignment = BoxContainer.ALIGNMENT_CENTER
+		vbox.set_anchors_preset(Control.PRESET_FULL_RECT)
+		vbox.add_theme_constant_override("separation", 4)
+		
+		if item.has("icon") and ResourceLoader.exists(item["icon"]):
+			var icon_rect = TextureRect.new()
+			icon_rect.texture = load(item["icon"])
+			icon_rect.custom_minimum_size = Vector2(40, 40)
+			icon_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+			icon_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+			icon_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			vbox.add_child(icon_rect)
+			
+		var lbl_title = Label.new()
+		lbl_title.text = item["title"]
+		lbl_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		lbl_title.add_theme_color_override("font_color", Color(1.0, 0.88, 0.25, 1.0))
+		lbl_title.add_theme_font_size_override("font_size", 12)
+		vbox.add_child(lbl_title)
+		
+		var lbl_desc = Label.new()
+		lbl_desc.text = item["desc"]
+		lbl_desc.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		lbl_desc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		lbl_desc.add_theme_font_size_override("font_size", 10)
+		vbox.add_child(lbl_desc)
+		
+		btn.add_child(vbox)
 		
 		# Styles spooky scary gothiques pour les cartes d'amélioration
 		if ResourceLoader.exists("res://assets/sprites/ui/button_spooky_normal.png"):
@@ -586,6 +654,11 @@ Restaure +50 Points de Vie"
 				elif item["type"] == "heal":
 					player.heal(50.0)
 					
+			if current_upgrade_callback.is_valid():
+				var cb = current_upgrade_callback
+				current_upgrade_callback = Callable()
+				cb.call(item)
+				
 			_on_upgrade_resolved()
 		)
 		choices_container.add_child(btn)
@@ -595,8 +668,8 @@ Restaure +50 Points de Vie"
 
 func _on_upgrade_resolved() -> void:
 	if upgrade_queue.size() > 0:
-		var next_title = upgrade_queue.pop_front()
-		_show_upgrade_modal_direct(next_title)
+		var next_item = upgrade_queue.pop_front()
+		_show_upgrade_modal_direct(next_item["title"], next_item.get("callback", Callable()))
 	else:
 		levelup_modal.visible = false
 		get_tree().paused = false

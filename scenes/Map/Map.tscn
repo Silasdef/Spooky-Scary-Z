@@ -99,19 +99,24 @@ content_margin_right = 12.0
 content_margin_bottom = 10.0
 
 [node name="Map" type="Node2D"]
+process_mode = 3
 script = ExtResource("1_map")
 
 [node name="Background" type="Sprite2D" parent="."]
 texture = ExtResource("3_map_tex")
 
 [node name="ArenaWalls" type="StaticBody2D" parent="."]
+process_mode = 1
 collision_mask = 6
 
 [node name="ChestsContainer" type="Node2D" parent="."]
+process_mode = 1
 
 [node name="EnemiesContainer" type="Node2D" parent="."]
+process_mode = 1
 
 [node name="Player" parent="." instance=ExtResource("2_player")]
+process_mode = 1
 
 [node name="BGMPlayer" type="AudioStreamPlayer" parent="."]
 process_mode = 3
@@ -268,16 +273,16 @@ text = "ITEMS & ARMES"
 [node name="LevelUpModal" type="PanelContainer" parent="HUD"]
 process_mode = 2
 visible = false
-custom_minimum_size = Vector2(680, 260)
+custom_minimum_size = Vector2(700, 275)
 anchors_preset = 8
 anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -340.0
-offset_top = -130.0
-offset_right = 340.0
-offset_bottom = 130.0
+offset_left = -350.0
+offset_top = -137.5
+offset_right = 350.0
+offset_bottom = 137.5
 grow_horizontal = 2
 grow_vertical = 2
 

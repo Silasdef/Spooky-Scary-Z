@@ -18,7 +18,7 @@ const AUDIO_SWING_PATH: String = "res://assets/audio/sword_swing.wav"
 @export var base_sword_length: float = 95.0     ## Longueur initiale de la lame
 @export var length_per_level: float = 40.0      ## Allongement physique de la lame par niveau
 @export var swing_duration: float = 0.20        ## Vitesse d'exécution du swing (sec)
-@export var knockback_force: float = 400.0      ## Force de repoussement des hordes
+@export var knockback_force: float = 180.0      ## Force de repoussement équilibrée (ne propulse plus les boss à l'infini)
 @export var weapon_level: int = 1               ## Niveau d'amélioration (1 à 5)
 
 # Synergie passive
@@ -220,10 +220,10 @@ func _on_target_entered(node: Node2D) -> void:
 			
 		node.take_damage(effective_dmg)
 		
-		# Knockback titanesque repoussant les monstres
+		# Knockback repoussant modérément les monstres
 		if node.has_method("apply_knockback"):
 			var kb_dir = (node.global_position - global_position).normalized()
-			var effective_kb = knockback_force * (1.0 + (weapon_level - 1) * 0.25)
+			var effective_kb = knockback_force * (1.0 + (weapon_level - 1) * 0.10)
 			node.apply_knockback(kb_dir * effective_kb)
 
 func upgrade() -> void:

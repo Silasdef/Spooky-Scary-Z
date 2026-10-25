@@ -13,14 +13,19 @@ signal player_died()
 # CHEMINS D'ACCÈS ASSETS
 # ==============================================================================
 const SPRITE_PATH: String = "res://assets/sprites/player.png"
+const CHARACTER_CONFIG_PATH: String = "user://selected_character.cfg"
 const AUDIO_HURT_PATH: String = "res://assets/audio/player_hurt.wav"
 const AUDIO_DASH_PATH: String = "res://assets/audio/dash.wav"
 const AUDIO_LEVELUP_PATH: String = "res://assets/audio/level_up.wav"
+
+# Sélection globale du personnage (Joel ou Ellie)
+static var global_selected_character: String = "joel"
 
 # ==============================================================================
 # ÉQUILIBRAGE JAM (Joueur & Capacités)
 # ==============================================================================
 @export_group("Equilibrage Joueur")
+@export var selected_character: String = "joel"   ## Personnage incarné ("joel" ou "ellie")
 @export var base_speed: float = 140.0            ## Vitesse de marche ralentie (px/s)
 @export var max_health: float = 100.0           ## Points de vie max
 @export var base_pickup_radius: float = 90.0    ## Rayon d'aspiration d'XP de base
@@ -54,10 +59,12 @@ var dash_timer: float = 0.0
 var dash_cooldown_timer: float = 0.0
 var dash_direction: Vector2 = Vector2.RIGHT
 var facing_direction: Vector2 = Vector2.RIGHT
+var dash_ghost_timer: float = 0.0
 
 var weapon_laser_gun: LaserGun = null
 var weapon_dragonslayer: Dragonslayer = null
 var weapon_boomerang: CommunistBoomerang = null
+var base_sprite_scale: Vector2 = Vector2(0.24, 0.24)
 
 @onready var sprite: Sprite2D = $Sprite2D
 @onready var pickup_area: Area2D = $PickupArea
@@ -67,8 +74,30 @@ var weapon_boomerang: CommunistBoomerang = null
 @onready var audio_hurt: AudioStreamPlayer2D = $AudioHurt
 
 func _ready() -> void:
+	z_index = 10
+	if sprite == null:
+		sprite = get_node_or_null("Sprite2D")
+	if pickup_area == null:
+		pickup_area = get_node_or_null("PickupArea")
+	if pickup_shape == null and pickup_area != null:
+		pickup_shape = pickup_area.get_node_or_null("CollisionShape2D")
+	if weapons_container == null:
+		weapons_container = get_node_or_null("WeaponsContainer")
+	if audio_dash == null:
+		audio_dash = get_node_or_null("AudioDash")
+	if audio_hurt == null:
+		audio_hurt = get_node_or_null("AudioHurt")
+		
 	add_to_group("player")
 	current_health = max_health
+	
+	# Chargement du personnage choisi (Joel ou Ellie)
+	var saved_char = _load_saved_character()
+	if saved_char != "":
+		selected_character = saved_char
+	elif global_selected_character != "":
+		selected_character = global_selected_character
+	global_selected_character = selected_character
 	
 	_ensure_default_input_actions()
 	_update_pickup_radius()
@@ -80,11 +109,9 @@ func _ready() -> void:
 	# Chargement des armes attachées ou existantes
 	_initialize_weapons()
 	
-	if ResourceLoader.exists(SPRITE_PATH):
-		sprite.texture = load(SPRITE_PATH)
-		sprite.scale = Vector2(0.24, 0.24)
-	else:
-		queue_redraw()
+	if sprite != null:
+		sprite.scale = base_sprite_scale
+	_update_facing_sprite()
 		
 	if ResourceLoader.exists(AUDIO_DASH_PATH):
 		audio_dash.stream = load(AUDIO_DASH_PATH)
@@ -92,7 +119,8 @@ func _ready() -> void:
 		audio_hurt.stream = load(AUDIO_HURT_PATH)
 		
 	# Connexion de la zone d'aspiration d'XP
-	pickup_area.area_entered.connect(_on_pickup_area_entered)
+	if not pickup_area.area_entered.is_connected(_on_pickup_area_entered):
+		pickup_area.area_entered.connect(_on_pickup_area_entered)
 
 func _ensure_default_input_actions() -> void:
 	# Garantit que les actions sont utilisables même si le projet est rechargé
@@ -126,8 +154,33 @@ func _physics_process(delta: float) -> void:
 		dash_timer -= delta
 		velocity = dash_direction * (base_speed * dash_speed_multiplier)
 		move_and_slide()
+		
+		# Traînée bleue de sprites derrière le joueur
+		dash_ghost_timer += delta
+		if dash_ghost_timer >= 0.03:
+			dash_ghost_timer = 0.0
+			_spawn_dash_ghost()
+			
+		_update_facing_sprite()
+		
+		# Animation dynamique du Dash (impulsion, étirement aérodynamique et inclinaison)
+		var dash_prog = clamp(1.0 - (dash_timer / dash_duration), 0.0, 1.0)
+		var impulse = sin(dash_prog * PI)
+		var norm_dir = dash_direction.normalized() if dash_direction.length_squared() > 0.01 else facing_direction
+		sprite.position = norm_dir * (impulse * 8.0)
+		sprite.rotation = norm_dir.x * deg_to_rad(12.0) * impulse
+		var stretch_x = 1.0 + (abs(norm_dir.x) * 0.28 - abs(norm_dir.y) * 0.12) * impulse
+		var stretch_y = 1.0 + (abs(norm_dir.y) * 0.28 - abs(norm_dir.x) * 0.12) * impulse
+		sprite.scale = base_sprite_scale * Vector2(stretch_x, stretch_y)
+		sprite.modulate = Color(0.65, 0.9, 1.45, 1.0) # Teinte bleutée électrique vive
+		
 		if dash_timer <= 0.0:
 			is_dashing = false
+			sprite.position = Vector2.ZERO
+			sprite.rotation = 0.0
+			sprite.scale = base_sprite_scale
+			sprite.modulate = Color.WHITE
+			_update_facing_sprite()
 		return
 		
 	# Déplacement 8 directions via Input.get_vector
@@ -158,6 +211,7 @@ func _perform_dash(input_vec: Vector2) -> void:
 	is_dashing = true
 	dash_timer = dash_duration
 	dash_cooldown_timer = dash_cooldown
+	dash_ghost_timer = 0.0
 	
 	# Si aucune direction n'est pressée, on dash dans la direction regardée
 	if input_vec.length_squared() > 0.01:
@@ -168,7 +222,8 @@ func _perform_dash(input_vec: Vector2) -> void:
 	if audio_dash.stream != null:
 		audio_dash.play()
 		
-	# Effet visuel : étincelle de propulsion
+	_update_facing_sprite()
+	_spawn_dash_ghost()
 	queue_redraw()
 
 func _update_pickup_radius() -> void:
@@ -284,24 +339,66 @@ func acquire_passive(passive_id: String) -> void:
 				weapon_boomerang.set_tayon_synergy(true)
 
 func _update_facing_sprite() -> void:
+	var dir = dash_direction if is_dashing else facing_direction
 	var dir_suffix = "bas"
-	if abs(facing_direction.x) > abs(facing_direction.y):
-		dir_suffix = "droite" if facing_direction.x > 0 else "gauche"
+	if abs(dir.x) > abs(dir.y):
+		dir_suffix = "droite" if dir.x > 0 else "gauche"
 	else:
-		dir_suffix = "bas" if facing_direction.y > 0 else "haut"
+		dir_suffix = "bas" if dir.y > 0 else "haut"
 		
-	var path = "res://assets/sprites/player_%s.png" % dir_suffix
+	var char_name = selected_character if selected_character != "" else global_selected_character
+	if char_name == "":
+		char_name = "joel"
+		
+	var path = "res://assets/sprites/%s_%s.png" % [char_name, dir_suffix]
+	if not ResourceLoader.exists(path):
+		path = "res://assets/sprites/player_%s.png" % dir_suffix
+		
 	if ResourceLoader.exists(path):
 		var tex = load(path)
-		if sprite.texture != tex:
+		if sprite != null and sprite.texture != tex:
 			sprite.texture = tex
 
-func _draw() -> void:
-	# Traînée visuelle de Dash
-	if is_dashing:
-		draw_circle(-dash_direction * 18.0, 12.0, Color(0.2, 0.7, 1.0, 0.4))
-		draw_circle(-dash_direction * 32.0, 8.0, Color(0.2, 0.7, 1.0, 0.2))
+func set_character(char_name: String) -> void:
+	selected_character = char_name
+	global_selected_character = char_name
+	save_character_selection(char_name)
+	_update_facing_sprite()
+
+static func save_character_selection(char_name: String) -> void:
+	global_selected_character = char_name
+	var cfg = ConfigFile.new()
+	cfg.load(CHARACTER_CONFIG_PATH)
+	cfg.set_value("game", "selected_character", char_name)
+	cfg.save(CHARACTER_CONFIG_PATH)
+
+func _load_saved_character() -> String:
+	var cfg = ConfigFile.new()
+	if cfg.load(CHARACTER_CONFIG_PATH) == OK:
+		return cfg.get_value("game", "selected_character", "joel")
+	return "joel"
+
+func _spawn_dash_ghost() -> void:
+	if sprite == null:
+		sprite = get_node_or_null("Sprite2D")
+	if sprite == null or sprite.texture == null or get_parent() == null:
+		return
+	var ghost = Sprite2D.new()
+	ghost.texture = sprite.texture
+	ghost.scale = sprite.scale
+	ghost.rotation = sprite.rotation
+	ghost.global_position = global_position + sprite.position
+	ghost.z_index = 8 # Bien visible au-dessus du sol/background
+	ghost.modulate = Color(0.2, 0.65, 1.0, 0.8) # Traînée bleue électrique éclatante
+	get_parent().add_child(ghost)
 	
+	var tween = ghost.create_tween().set_parallel(true)
+	if tween != null:
+		tween.tween_property(ghost, "modulate:a", 0.0, 0.22)
+		tween.tween_property(ghost, "scale", sprite.scale * 0.85, 0.22)
+		tween.chain().tween_callback(ghost.queue_free)
+
+func _draw() -> void:
 	# Si le sprite officiel est chargé, on ne dessine pas le corps procédural
 	if sprite.texture != null:
 		return
@@ -327,6 +424,7 @@ func get_save_data() -> Dictionary:
 	var boom_lvl = weapon_boomerang.weapon_level if weapon_boomerang != null else 0
 	
 	return {
+		"selected_character": selected_character,
 		"current_health": current_health,
 		"max_health": max_health,
 		"current_xp": current_xp,
@@ -346,6 +444,8 @@ func get_save_data() -> Dictionary:
 	}
 
 func load_save_data(data: Dictionary) -> void:
+	if data.has("selected_character"):
+		set_character(data["selected_character"])
 	current_health = data.get("current_health", current_health)
 	max_health = data.get("max_health", max_health)
 	current_xp = data.get("current_xp", current_xp)

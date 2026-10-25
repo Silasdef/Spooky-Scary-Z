@@ -42,19 +42,31 @@ func _physics_process(delta: float) -> void:
 	_update_sprite_direction()
 
 func _update_sprite_direction() -> void:
-	if velocity.length_squared() < 1.0:
+	if sprite == null:
+		sprite = get_node_or_null("Sprite2D")
+	if sprite == null:
 		return
+		
+	var dir = velocity
+	if is_instance_valid(target_player):
+		dir = target_player.global_position - global_position
+		
+	if dir.length_squared() < 0.1:
+		return
+		
 	var dir_suffix = "bas"
-	if abs(velocity.x) > abs(velocity.y):
-		dir_suffix = "droite" if velocity.x > 0 else "gauche"
+	if abs(dir.x) > abs(dir.y):
+		dir_suffix = "droite" if dir.x > 0 else "gauche"
 	else:
-		dir_suffix = "bas" if velocity.y > 0 else "haut"
+		dir_suffix = "bas" if dir.y > 0 else "haut"
 		
 	var path = "res://assets/sprites/zombie_dog_%s.png" % dir_suffix
 	if ResourceLoader.exists(path):
 		var tex = load(path)
 		if sprite.texture != tex:
 			sprite.texture = tex
+			
+	sprite.flip_h = false
 
 func _draw() -> void:
 	if sprite.texture != null:
